@@ -30,6 +30,7 @@ class Author(models.Model):
     class Meta:
         verbose_name = "Author"
         verbose_name_plural = "Authors"
+        db_table_comment = "A List of Authors"
 ```
 ## Django URLs
 - Django Fast Frontend will automatically add its URLs to the root URL file in your Django project.  
@@ -37,7 +38,8 @@ class Author(models.Model):
 - See options to modify the frontend URL in Django Settings
 
 ## Custom CSS Styles
-- Add 
+- Add a custom.css to the following path `static/custom.css`
+- See options to modify the `static/custom.css` path in Django Settings
 
 ## Django Settings
 - `FRONTEND_URL = 'your-favorite-url-path'`  

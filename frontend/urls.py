@@ -18,6 +18,9 @@ from . import views
 
 urlpatterns = [
     path('', views.frontend_view, name='frontend'),
+    path('favicon.ico', views.favicon_view, name='favicon'),
     path('<str:app_name>/', views.frontend_view, name='frontend'),
     path('<str:app_name>/<str:model_name>/', views.frontend_view, name='frontend'),
+    path('<str:app_name>/<str:model_name>/<str:action>', views.frontend_view, name='frontend'),
+    path('<str:app_name>/<str:model_name>/<str:action>/<str:id>', views.frontend_view, name='frontend'),
 ]

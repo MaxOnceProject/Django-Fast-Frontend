@@ -28,8 +28,22 @@
             {% for object in table.objects %}
                 <tr>
                     {% for key, value in object.items %}
-                        <td>{{ value }}</td>
+                        {% if 'id' in table.fields %}
+                            <td>{{ value }}</td>
+                        {% else %}
+                            {% if not key == 'id' %}
+                                <td>{{ value }}</td>
+                            {% endif %}
+                        {% endif %}
                     {% endfor %}
+                    {% if option.table.inline_button %}
+                        <td>
+                            <form method="post" class="needs-validation" novalidate action="{{ request.path }}inline_button/{{ object.id }}">
+                                {% csrf_token %}
+                                {% bootstrap_button button_type="submit" content=table.inline_button %}
+                            </form>
+                        </td>
+                    {% endif %}
                 </tr>
             {% endfor %}
             </tbody>
