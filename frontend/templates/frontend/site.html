@@ -1,0 +1,38 @@
+<!-- table.html -->
+{% extends 'frontend/base.html' %}
+
+{% load django_bootstrap5 %}
+
+{% block title %}{{ meta.title }}{% endblock %}
+
+{{% block content %}
+    <h1>{{ meta.title }}</h1>
+    {% if option.table.add %}
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            {% bootstrap_form table.form %}
+            {% bootstrap_button button_type="submit" content="OK" %}
+            {% bootstrap_button button_type="reset" content="Cancel" %}
+        </form>
+    {% endif %}
+    {% if option.table.show %}
+        <table class="table">
+            <thead>
+            <tr>
+                {% for field in table.fields %}
+                    <th>{{ field }}</th>
+                {% endfor %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for object in table.objects %}
+                <tr>
+                    {% for key, value in object.items %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

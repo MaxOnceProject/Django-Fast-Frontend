@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python /opt/project/manage.py runserver 0:8000
+    ports:
+      - "0.0.0.0:8000:8000"
+    volumes:
+      - .:/opt/project
+    environment:
+      - DJANGO_DEBUG=true
+      - DJANGO_ENVIRONMENT=dev
+      - DJANGO_SETTINGS_MODULE=project.settings
