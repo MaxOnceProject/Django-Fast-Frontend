@@ -41,6 +41,20 @@ class Author(models.Model):
 - Add a custom.css to the following path `static/custom.css`
 - See options to modify the `static/custom.css` path in Django Settings
 
+## Inline Button
+- Add a class property called `inline_button = 'name-of-your-button`
+- Add a function called `post_inline_button` to execute a function
+```
+class AuthorFrontend(frontend.ModelFrontend):
+    fields = ('name', 'title')
+    inline_button = 'check'
+
+    def post_inline_button(self, object):
+        print(object.name)
+
+frontend.site.register(Author, AuthorFrontend)
+```
+
 ## Django Settings
 - `FRONTEND_URL = 'your-favorite-url-path'`  
 _(Note that adding or removing leading or trailing `/` will have no effect on the path creation)_
