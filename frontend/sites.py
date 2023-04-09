@@ -31,11 +31,13 @@ class FrontendSite:
             app_verbose_name = getattr(model._meta.app_config, 'verbose_name', model._meta.app_label)
             model_name = model._meta.model_name
             model_verbose__name = getattr(model._meta, 'verbose_name_plural', getattr(model._meta, 'verbose_name', model._meta.model_name))
+            model_description = getattr(model._meta, 'db_table_comment', '')
             if not app_name in register:
                 register[app_name] = {'verbose_name': app_verbose_name,
                                  'models': []}
             register[app_name]['models'] += [{'name': model_name,
-                                            'verbose_name': model_verbose__name}]
+                                            'verbose_name': model_verbose__name,
+                                            'description': model_description}]
         return register
 
     def create_navbar_register_by_app(self, register, app_name):

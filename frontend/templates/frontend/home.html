@@ -11,11 +11,12 @@
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex justify-content-center align-items-center" style="height: 150px;">
                                 <i class="bi bi-bootstrap" style="font-size: 3rem;"></i>
-                            </div>                        <div class="card-body">
-                            <h5 class="card-title">{{ app.verbose_name }} - {{ model.verbose_name }}</h5>
-{#                            <p class="card-text">Some description about the {{ model }}.</p>#}
-                            <a href="{% url 'frontend' app_name=app_name model_name=model.name %}" class="btn btn-primary  mt-auto">Go to {{ model.verbose_name }}</a>
-                        </div>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">{{ app.verbose_name }} - {{ model.verbose_name }}</h5>
+                                <p class="card-text">{{ model.description }}</p>
+                                <a href="{% url 'frontend' app_name=app_name model_name=model.name %}" class="btn btn-primary  mt-auto">Go to {{ model.verbose_name }}</a>
+                            </div>
                         </div>
                     </div>
                 </div>
