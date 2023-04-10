@@ -16,7 +16,18 @@
         </form>
     {% endif %}
     {% if option.table.show %}
-        <table class="table">
+        <div class="row">
+            {% if option.table.search %}
+                <div class="col d-flex justify-content-end">
+                    <form method="get" class="d-inline-flex">
+                        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search" class="form-control">
+                        <button type="submit" class="btn btn-primary ms-2">Search</button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+
+        <table class="table table-hover" id="FrontendTable">
             <thead>
             <tr>
                 {% for field in table.fields %}
@@ -37,16 +48,61 @@
                         {% endif %}
                     {% endfor %}
                     {% if option.table.inline_button %}
-                        <td>
-                            <form method="post" class="needs-validation" novalidate action="{{ request.path }}inline_button/{{ object.id }}">
-                                {% csrf_token %}
-                                {% bootstrap_button button_type="submit" content=table.inline_button %}
-                            </form>
-                        </td>
+                        {% for inline_button in table.inline_button %}
+                            <td>
+                                <form method="post" class="needs-validation" novalidate action="{{ request.path }}{{ inline_button }}/{{ object.id }}">
+                                    {% csrf_token %}
+                                    {% bootstrap_button button_type="submit" content=inline_button %}
+                                </form>
+                            </td>
+                        {% endfor %}
                     {% endif %}
                 </tr>
             {% endfor %}
             </tbody>
         </table>
+        <div class="row">
+            <div class="col">
+                <nav aria-label="Table pagination">
+                    <ul class="pagination">
+                        {% if table.objects.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ table.objects.previous_page_number }}" aria-disabled="true">previous</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">previous</span>
+                            </li>
+                        {% endif %}
+                        {% if table.objects.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ table.objects.next_page_number }}" aria-disabled="true">next</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">next</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
     {% endif %}
+    <script>
+        $(document).ready(function() {
+            $('#FrontendTable').DataTable( {
+                paging: false,
+                // dom: "<'d-flex mr-auto'f>",
+                responsive: false,
+                colReorder: true,
+                fixedHeader: true,
+                select: true,
+                keys: true,
+                // rowGroup: true
+                dom: 'Bfrtip',
+                order: [[ 0, "desc" ]],
+            } );
+        } );
+</script>
+
 {% endblock %}
