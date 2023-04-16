@@ -14,11 +14,6 @@ from django.db.models import Q
 def favicon_view(request):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-def create_filter_class(model, filters):
-    Meta = type("Meta", (), {"model": model, "fields": filters})
-    filter_class = type(f"{model.__name__}Filter", (django_filters.FilterSet,), {"Meta": Meta})
-    return filter_class
-
 def frontend_view(request, app_name=None, model_name=None, action=None, id=None):
     register = site.create_navbar_register()
     # Landing page for root
@@ -61,24 +56,43 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
     model = apps.get_model(app_name, model_name)
     frontend_config = site._registry[model].__class__
 
-    form_class = generate_form_for_model(model)
+    fields = list(getattr(frontend_config, 'fields', []))
+    form_class = generate_form_for_model(model, fields)
+    form = form_class()
 
     if request.method == "POST":
         if action in getattr(frontend_config, 'table_inline_button'):
-            model = apps.get_model(app_name, model_name)
-            frontend_config = site._registry[model].__class__
-
             object = model.objects.get(id=id)
             getattr(frontend_config(), action)(object)
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-        if action == 'table_add':
+    if request.method == "POST":
+        if action == 'table_change' and frontend_config.change_permission:
+            object = model.objects.get(id=id)
+            form = form_class(request.POST, instance=object)
+            if form.is_valid():
+                form.save()
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+    if request.method == "POST":
+        if action == 'table_add' and frontend_config.add_permission:
             form = form_class(request.POST)
             if form.is_valid():
                 form.save()
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    if request.method == "POST":
+        if action == 'table_delete' and frontend_config.delete_permission:
+            object = model.objects.get(id=id)
+            object.delete()
+            return HttpResponseRedirect(f"/{app_name}/{model_name}")
 
-    fields = list(getattr(frontend_config, 'fields', []))
+    if id and action in ['table_change'] and frontend_config.change_permission:
+        object = model.objects.get(id=id)
+        form = form_class(request.POST or None, initial=object.__dict__)
+        if frontend_config.readonly_fields:
+            for readonly_fields in frontend_config.readonly_fields:
+                form.fields[readonly_fields].widget.attrs['readonly'] = True
 
     if 'id' in fields:
         objects = model.objects.values(*fields)
@@ -94,8 +108,8 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
 
     # Search
     search_fields = getattr(frontend_config, 'search_fields', None)
+    search_query = request.GET.get("q", "")
     if search_fields:
-        search_query = request.GET.get("q", "")
         frontend_config.search_fields_option = True
         if search_query:
             search_query_list = [Q(**{f"{field}__icontains": search_query}) for field in search_fields]
@@ -106,7 +120,7 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
     page = request.GET.get("page")
     objects = paginator.get_page(page)
 
-    table_inline_button = getattr(frontend_config, 'table_inline_button', None)
+    table_inline_button = getattr(frontend_config, 'table_inline_button', [])
 
     if table_inline_button:
         frontend_config.inline_button_option = True
@@ -121,14 +135,15 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
         },
         "option": {
             "table": {
-                "add": False,
                 "show": True,
+                "add": getattr(frontend_config, 'add_permission', False),
+                "change": getattr(frontend_config, 'change_permission', False),
                 "search": getattr(frontend_config, 'search_fields_option', False),
                 "inline_button": getattr(frontend_config, 'inline_button_option', False),
             },
         },
         "table": {
-            "form": form_class(),
+            "form": form,
             "objects": objects,
             "fields": fields,
             "inline_button": getattr(frontend_config, 'table_inline_button', None),
@@ -136,20 +151,3 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
         }
     }
     return render(request, "frontend/site.html", context)
-
-
-def post_view(request, app_name=None, model_name=None):
-    if request.method == "POST":
-        model = apps.get_model(app_name, model_name)
-        frontend_config = site._registry[model].__class__
-
-
-    # form_class = generate_form_for_model(model)
-    # if request.method == "POST":
-    #     form = form_class(request.POST)
-    #     if form.is_valid():
-    #         form.save()
-    #         return redirect(request.path)
-    # else:
-    #     form = form_class()
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))

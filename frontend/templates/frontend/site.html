@@ -2,18 +2,25 @@
 {% extends 'frontend/base.html' %}
 
 {% load django_bootstrap5 %}
+{% load django_fast_frontend %}
 
 {% block title %}{{ meta.title }}{% endblock %}
 
 {{% block content %}
+    {% with request.path|split:"/" as segments %}
     <h1>{{ meta.title }}</h1>
     {% if option.table.add %}
-        <form method="post" class="needs-validation" novalidate>
+        <form method="post" class="needs-validation">
             {% csrf_token %}
             {% bootstrap_form table.form %}
-            {% bootstrap_button button_type="submit" content="OK" %}
-            {% bootstrap_button button_type="reset" content="Cancel" %}
+            {% bootstrap_button button_type="submit" content="Save" %}
         </form>
+        {% if segments.4 %}
+        <form method="post" class="needs-validation" action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_delete" id=segments.4 %}">
+            {% csrf_token %}
+            {% bootstrap_button button_class="btn-danger" button_type="submit" content="Delete" %}
+        </form>
+        {% endif %}
     {% endif %}
     {% if option.table.show %}
         <div class="row">
@@ -33,6 +40,9 @@
                 {% for field in table.fields %}
                     <th>{{ field }}</th>
                 {% endfor %}
+                {% if option.table.change %}
+                    <th>edit</th>
+                {% endif %}
             </tr>
             </thead>
             <tbody>
@@ -56,6 +66,11 @@
                                 </form>
                             </td>
                         {% endfor %}
+                    {% endif %}
+                    {% if option.table.change %}
+                        <td>
+                            <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_change" id=object.id %}">{% bootstrap_button button_type="button" content="Edit" %}</a>
+                        </td>
                     {% endif %}
                 </tr>
             {% endfor %}
@@ -88,6 +103,7 @@
             </div>
         </div>
     {% endif %}
+    {% endwith %}
     <script>
         $(document).ready(function() {
             $('#FrontendTable').DataTable( {
