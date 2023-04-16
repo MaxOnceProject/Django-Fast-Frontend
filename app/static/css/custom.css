@@ -1,49 +1,71 @@
 /* styles.css */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap');
+
 body {
     font-family: 'Poppins', sans-serif;
     background-color: #f8f9fa;
 }
 
 h1 {
-    color: #000000;
+    color: #333;
     margin-bottom: 30px;
+    font-weight: 500;
 }
 
+/* Navbar */
 .navbar {
+    background: linear-gradient(90deg, rgba(243, 17, 17, 1) 0%, rgba(255, 170, 0, 1) 20%, rgba(3, 252, 63, 1) 40%, rgba(0, 170, 255, 1) 60%, rgba(170, 0, 255, 1) 80%);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .navbar-brand {
     font-weight: bold;
-}
-
-.card {
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s;
-}
-
-.card:hover {
-    transform: translateY(-10px);
-}
-
-.card-body {
-    background: linear-gradient(135deg, #c850c0, #4158d0);
     color: white;
-    border-radius: 10px;
 }
 
-.card-title {
-    font-weight: bold;
+.navbar-light .navbar-nav .nav-link {
+    color: white;
 }
 
-.btn-primary {
-    background-color: #c850c0;
-    border-color: #c850c0;
+.navbar-light .navbar-nav .nav-link:hover {
+    color: rgba(255, 255, 255, 0.8);
 }
 
-.btn-primary:hover {
-    background-color: #b840b7;
-    border-color: #b840b7;
+.navbar-light .navbar-nav .dropdown-menu {
+    background-color: rgba(0, 170, 255, 1);
+}
+
+.navbar-light .navbar-nav .dropdown-menu .dropdown-item {
+    color: white;
+}
+
+.navbar-light .navbar-nav .dropdown-menu .dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Table */
+.table {
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead {
+    background: linear-gradient(90deg, rgba(243, 17, 17, 1) 0%, rgba(255, 170, 0, 1) 20%, rgba(3, 252, 63, 1) 40%, rgba(0, 170, 255, 1) 60%, rgba(170, 0, 255, 1) 80%);
+    color: white;
+}
+
+.table td, .table th {
+    padding: 12px;
+    border-top: none;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 170, 255, 0.1);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
 }

@@ -4,12 +4,12 @@ from app.models import Author
 
 # Register your models here.
 class AuthorFrontend(frontend.ModelFrontend):
-    # fields = ('name', 'title')
+    # fields = ('name', 'title', 'birth_date')
     table_inline_button = ('check', 'uncheck')
     table_add = False
     table_show = True
     # list_filter = ('name', 'title')
-    search_fields = ('name', 'title')
+    search_fields = ('name', 'title', 'birth_date')
 
 
     def check(self, object):

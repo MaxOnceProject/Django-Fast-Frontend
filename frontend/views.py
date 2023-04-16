@@ -84,8 +84,13 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
         objects = model.objects.values(*fields)
     elif not fields:
         objects = model.objects.values()
+        if objects.exists():
+            fields = [field for field in objects[0].keys() if field != 'id']
+        else:
+            fields = [field.name for field in model._meta.fields if field.name != 'id']
     else:
         objects = model.objects.values(*fields, 'id')
+
 
     # Search
     search_fields = getattr(frontend_config, 'search_fields', None)
@@ -101,10 +106,12 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
     page = request.GET.get("page")
     objects = paginator.get_page(page)
 
+    table_inline_button = getattr(frontend_config, 'table_inline_button', None)
 
-    if getattr(frontend_config, 'table_inline_button', False):
+    if table_inline_button:
         frontend_config.inline_button_option = True
-        fields += ['action']
+        for action in table_inline_button:
+            fields += [action]
 
     context = {
         "meta": {
@@ -125,6 +132,7 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
             "objects": objects,
             "fields": fields,
             "inline_button": getattr(frontend_config, 'table_inline_button', None),
+            "search_query": search_query
         }
     }
     return render(request, "frontend/site.html", context)
