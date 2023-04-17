@@ -1,0 +1,28 @@
+<!-- frontend_admin/templates/frontend_admin/admin.html -->
+
+<div class="row">
+    <div class="col">
+        <nav aria-label="Table pagination">
+            <ul class="pagination">
+                {% if table.objects.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ table.objects.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-disabled="true">previous</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">previous</span>
+                    </li>
+                {% endif %}
+                {% if table.objects.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ table.objects.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-disabled="true">next</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">next</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>

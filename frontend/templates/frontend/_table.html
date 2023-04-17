@@ -1,0 +1,45 @@
+<!-- frontend_admin/templates/frontend_admin/admin.html -->
+{% load django_bootstrap5 %}
+
+<table class="table table-hover" id="FrontendTable">
+    <thead>
+    <tr>
+        {% for field in table.fields %}
+            <th>{{ field }}</th>
+        {% endfor %}
+        {% if option.table.change %}
+            <th>edit</th>
+        {% endif %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for object in table.objects %}
+        <tr>
+            {% for key, value in object.items %}
+                {% if 'id' in table.fields %}
+                    <td>{{ value }}</td>
+                {% else %}
+                    {% if not key == 'id' %}
+                        <td>{{ value }}</td>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            {% if option.table.inline_button %}
+                {% for inline_button in table.inline_button %}
+                    <td>
+                        <form method="post" class="needs-validation" novalidate action="{{ request.path }}{{ inline_button }}/{{ object.id }}">
+                            {% csrf_token %}
+                            {% bootstrap_button button_type="submit" content=inline_button %}
+                        </form>
+                    </td>
+                {% endfor %}
+            {% endif %}
+            {% if option.table.change %}
+                <td>
+                    <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_change" id=object.id %}">{% bootstrap_button button_type="button" content="Edit" %}</a>
+                </td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

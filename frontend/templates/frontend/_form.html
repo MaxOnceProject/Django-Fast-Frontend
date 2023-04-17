@@ -1,11 +1,16 @@
 <!-- frontend_admin/templates/frontend_admin/admin.html -->
-{% extends "frontend/base.html" %}
+{% load django_bootstrap5 %}
 
-{% block content %}
-  <h1>{{ model_name }} - Frontend</h1>
-  <form method="post">
+<form method="post" class="needs-validation">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Submit</button>
-  </form>
-{% endblock %}
+    {% bootstrap_form table.form %}
+    <div class="col d-flex justify-content-between">
+        {% bootstrap_button button_type="submit" content="Save" %}
+</form>
+{% if segments.4 %}
+    <form method="post" class="needs-validation" action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_delete" id=segments.4 %}">
+        {% csrf_token %}
+        {% bootstrap_button button_class="btn-danger" button_type="submit" content="Delete" %}
+    </form>
+{% endif %}
+</div>

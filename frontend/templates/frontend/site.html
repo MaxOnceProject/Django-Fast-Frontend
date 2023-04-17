@@ -6,119 +6,24 @@
 
 {% block title %}{{ meta.title }}{% endblock %}
 
-{{% block content %}
+{% block content %}
     {% with request.path|split:"/" as segments %}
-    <h1>{{ meta.title }}</h1>
-    {% if option.table.add %}
-        <form method="post" class="needs-validation">
-            {% csrf_token %}
-            {% bootstrap_form table.form %}
-            {% bootstrap_button button_type="submit" content="Save" %}
-        </form>
-        {% if segments.4 %}
-        <form method="post" class="needs-validation" action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_delete" id=segments.4 %}">
-            {% csrf_token %}
-            {% bootstrap_button button_class="btn-danger" button_type="submit" content="Delete" %}
-        </form>
+        {% if option.site.title %}
+            <h1>{{ meta.title }}</h1>
         {% endif %}
-    {% endif %}
+        {% if option.table.add %}
+            {% include 'frontend/_form.html' %}
+        {% endif %}
     {% if option.table.show %}
-        <div class="row">
-            {% if option.table.search %}
-                <div class="col d-flex justify-content-end">
-                    <form method="get" class="d-inline-flex">
-                        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search" class="form-control">
-                        <button type="submit" class="btn btn-primary ms-2">Search</button>
-                    </form>
-                </div>
-            {% endif %}
-        </div>
-
-        <table class="table table-hover" id="FrontendTable">
-            <thead>
-            <tr>
-                {% for field in table.fields %}
-                    <th>{{ field }}</th>
-                {% endfor %}
-                {% if option.table.change %}
-                    <th>edit</th>
-                {% endif %}
-            </tr>
-            </thead>
-            <tbody>
-            {% for object in table.objects %}
-                <tr>
-                    {% for key, value in object.items %}
-                        {% if 'id' in table.fields %}
-                            <td>{{ value }}</td>
-                        {% else %}
-                            {% if not key == 'id' %}
-                                <td>{{ value }}</td>
-                            {% endif %}
-                        {% endif %}
-                    {% endfor %}
-                    {% if option.table.inline_button %}
-                        {% for inline_button in table.inline_button %}
-                            <td>
-                                <form method="post" class="needs-validation" novalidate action="{{ request.path }}{{ inline_button }}/{{ object.id }}">
-                                    {% csrf_token %}
-                                    {% bootstrap_button button_type="submit" content=inline_button %}
-                                </form>
-                            </td>
-                        {% endfor %}
-                    {% endif %}
-                    {% if option.table.change %}
-                        <td>
-                            <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_change" id=object.id %}">{% bootstrap_button button_type="button" content="Edit" %}</a>
-                        </td>
-                    {% endif %}
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        <div class="row">
-            <div class="col">
-                <nav aria-label="Table pagination">
-                    <ul class="pagination">
-                        {% if table.objects.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ table.objects.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-disabled="true">previous</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">previous</span>
-                            </li>
-                        {% endif %}
-                        {% if table.objects.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ table.objects.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-disabled="true">next</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">next</span>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            </div>
-        </div>
+        {% if option.table.search %}
+            {% include 'frontend/_search.html' %}
+        {% endif %}
+        {% if option.table.cards %}
+            {% include 'frontend/_cards.html' %}
+        {% else %}
+            {% include 'frontend/_table.html' %}
+        {% endif %}
+        {% include 'frontend/_pagination.html' %}
     {% endif %}
     {% endwith %}
-    <script>
-        $(document).ready(function() {
-            $('#FrontendTable').DataTable( {
-                paging: false,
-                // dom: "<'d-flex mr-auto'f>",
-                responsive: false,
-                colReorder: true,
-                fixedHeader: true,
-                select: true,
-                keys: true,
-                // rowGroup: true
-                dom: 'Bfrtip',
-                order: [[ 0, "desc" ]],
-            } );
-        } );
-</script>
-
 {% endblock %}

@@ -116,7 +116,7 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
             objects = objects.filter(Q(*search_query_list, _connector=Q.OR))
 
     # Pagination
-    paginator = Paginator(objects, 10)  # Show x items per page
+    paginator = Paginator(objects, getattr(frontend_config, 'list_per_page', 100))  # Show x items per page
     page = request.GET.get("page")
     objects = paginator.get_page(page)
 
@@ -134,8 +134,12 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
             "css": getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css'),
         },
         "option": {
+            "site": {
+                "title": True
+            },
             "table": {
-                "show": True,
+                "cards": getattr(frontend_config, 'cards', False),
+                "show": getattr(frontend_config, 'table_show', True),
                 "add": getattr(frontend_config, 'add_permission', False),
                 "change": getattr(frontend_config, 'change_permission', False),
                 "search": getattr(frontend_config, 'search_fields_option', False),
