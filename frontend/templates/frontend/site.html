@@ -8,22 +8,30 @@
 
 {% block content %}
     {% with request.path|split:"/" as segments %}
-        {% if option.site.title %}
-            <h1>{{ meta.title }}</h1>
-        {% endif %}
-        {% if option.table.add %}
-            {% include 'frontend/_form.html' %}
-        {% endif %}
-    {% if option.table.show %}
-        {% if option.table.search %}
-            {% include 'frontend/_search.html' %}
-        {% endif %}
-        {% if option.table.cards %}
-            {% include 'frontend/_cards.html' %}
+        <div class="col d-flex justify-content-between">
+            {% if option.site.title %}
+                <h1>{{ meta.title }}</h1>
+            {% endif %}
+            {% if segments.3 %}
+                <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 %}">{% bootstrap_button button_class="btn-outline-primary" button_type="button" content="Back" %}</a>
+            {% endif %}
+        </div>
+        {% if segments.4 %}
+            {% if option.table.add %}
+                {% include 'frontend/_form.html' %}
+            {% endif %}
         {% else %}
-            {% include 'frontend/_table.html' %}
+            {% if option.table.show %}
+                {% if option.table.search %}
+                    {% include 'frontend/_search.html' %}
+                {% endif %}
+                {% if option.table.cards %}
+                    {% include 'frontend/_cards.html' %}
+                {% else %}
+                    {% include 'frontend/_table.html' %}
+                {% endif %}
+                {% include 'frontend/_pagination.html' %}
+            {% endif %}
         {% endif %}
-        {% include 'frontend/_pagination.html' %}
-    {% endif %}
     {% endwith %}
 {% endblock %}

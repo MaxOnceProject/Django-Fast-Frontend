@@ -11,7 +11,7 @@ class AuthorFrontend(frontend.ModelFrontend):
     table_inline_button = ('check', 'uncheck')
     table_add = False
     table_show = True
-    cards = True
+    cards = False
     # list_filter = ('name', 'title')
     search_fields = ('name', 'title', 'birth_date')
     readonly_fields = ('name', 'title')

@@ -28,7 +28,7 @@
                                 {{ app.verbose_name }}
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="{{ app }}-dropdown">
-                                    <li><a class="dropdown-item" href="{% url 'frontend' app_name=app_name  %}">All {{ app.verbose_name }}</a></li>
+                                <li><a class="dropdown-item" href="{% url 'frontend' app_name=app_name  %}">All {{ app.verbose_name }}</a></li>
                                 {% for model in app.models %}
                                     <li><a class="dropdown-item" href="{% url 'frontend' app_name=app_name model_name=model.name  %}">{{ model.verbose_name }}</a></li>
                                 {% endfor %}

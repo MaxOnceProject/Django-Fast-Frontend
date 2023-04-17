@@ -27,7 +27,7 @@
             {% if option.table.inline_button %}
                 {% for inline_button in table.inline_button %}
                     <td>
-                        <form method="post" class="needs-validation" novalidate action="{{ request.path }}{{ inline_button }}/{{ object.id }}">
+                        <form method="post" class="needs-validation" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=inline_button id=object.id %}">
                             {% csrf_token %}
                             {% bootstrap_button button_type="submit" content=inline_button %}
                         </form>
