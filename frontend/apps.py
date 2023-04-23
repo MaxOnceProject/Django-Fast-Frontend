@@ -32,9 +32,10 @@ class FrontendConfig(AppConfig):
 
         # urlpatterns = []
         # urlpatterns = getattr(importlib.import_module(settings.ROOT_URLCONF), 'urlpatterns', urlpatterns)
-        urlpatterns = importlib.import_module(settings.ROOT_URLCONF).urlpatterns
-        urlpatterns += [path(get_frontend_url(), include('frontend.urls')),]
-        print(urlpatterns)
+        if getattr(settings, 'FRONTEND_AUTO_URL', ''):
+            urlpatterns = importlib.import_module(settings.ROOT_URLCONF).urlpatterns
+            urlpatterns += [path(get_frontend_url(), include('frontend.urls')),]
+            print(urlpatterns)
 
         # validate
         # add_or_get_installed_app('django_bootstrap5')

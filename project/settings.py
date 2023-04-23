@@ -116,6 +116,9 @@ USE_I18N = True
 
 USE_TZ = True
 
+# LOGIN_URL
+# LOGIN_REDIRECT_URL
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
@@ -131,3 +134,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # FRONTEND_URL = '/your-favorite-url-path/'
 FRONTEND_TITLE = 'My Website'
 FRONTEND_CUSTOM_CSS = 'css/custom.css'
+FRONTEND_AUTO_URL = False
+FRONTEND_URL = ''

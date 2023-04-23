@@ -1,6 +1,6 @@
 # frontend_admin/views.py
 from django.conf import settings
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import render, redirect
 from django_filters import ChoiceFilter
 
@@ -56,9 +56,17 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
     model = apps.get_model(app_name, model_name)
     frontend_config = site._registry[model].__class__
 
+    if getattr(frontend_config, 'toolbar_button', True) and not request.user.is_authenticated:
+        return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+
     fields = list(getattr(frontend_config, 'fields', []))
     form_class = generate_form_for_model(model, fields)
     form = form_class()
+
+    if request.method == "POST":
+        if action in getattr(frontend_config, 'toolbar_button'):
+            getattr(frontend_config(), action)()
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
     if request.method == "POST":
         if action in getattr(frontend_config, 'table_inline_button'):
@@ -135,9 +143,11 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
         },
         "option": {
             "site": {
-                "title": True
+                "title": True,
+                "description": getattr(frontend_config, 'description', False),
             },
             "table": {
+                "toolbar_button": getattr(frontend_config, 'toolbar_button', False),
                 "cards": getattr(frontend_config, 'cards', False),
                 "show": getattr(frontend_config, 'table_show', True),
                 "add": getattr(frontend_config, 'add_permission', False),
@@ -146,11 +156,15 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
                 "inline_button": getattr(frontend_config, 'inline_button_option', False),
             },
         },
+        "site": {
+            "description": getattr(frontend_config, 'description', False),
+        },
         "table": {
             "form": form,
             "objects": objects,
             "fields": fields,
             "inline_button": getattr(frontend_config, 'table_inline_button', None),
+            "toolbar_button": getattr(frontend_config, 'toolbar_button', None),
             "search_query": search_query
         }
     }

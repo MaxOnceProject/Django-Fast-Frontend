@@ -2,8 +2,9 @@ from importlib import import_module
 from django.apps import apps
 
 class FrontendSite:
-    def __init__(self):
+    def __init__(self, name="frontend"):
         self._registry = {}
+        self.name = name
 
     def register(self, model, frontend_class=None):
         if frontend_class is None:
@@ -42,6 +43,11 @@ class FrontendSite:
 
     def create_navbar_register_by_app(self, register, app_name):
         return {app_name: register[app_name]}
+
+    @property
+    def urls(self):
+        from .urls import urlpatterns
+        return urlpatterns, "", self.name
 
 
 site = FrontendSite()

@@ -19,4 +19,5 @@ import frontend
 
 urlpatterns = [
     path('admin', admin.site.urls),
+    path('frontend', frontend.site.urls),
 ]

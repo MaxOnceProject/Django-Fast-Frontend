@@ -1,5 +1,6 @@
 <!-- frontend_admin/templates/frontend_admin/admin.html -->
 {% load django_bootstrap5 %}
+{% load django_fast_frontend %}
 
 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3 mt-1 mb-1">
 
@@ -22,7 +23,9 @@
                                 <div class="p-1">
                                     <form method="post" class="needs-validation" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=inline_button id=object.id %}">
                                         {% csrf_token %}
-                                        {% bootstrap_button button_type="submit" content=inline_button %}
+                                        {% with inline_button|label as inline_button_label %}
+                                            {% bootstrap_button button_type="submit" content=inline_button_label %}
+                                        {% endwith %}
                                     </form>
                                 </div>
                             {% endfor %}
@@ -31,7 +34,7 @@
                     <div class="d-flex">
                         {% if option.table.change %}
                             <div class="p-1">
-                                <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_change" id=object.id %}">{% bootstrap_button button_type="button" content="Edit" %}</a>
+                                <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_change" id=object.id %}">{% bootstrap_button button_type="button" content="<i class='bi bi-pencil'></i> Edit" %}</a>
                             </div>
                         {% endif %}
                     </div>

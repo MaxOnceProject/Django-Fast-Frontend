@@ -19,7 +19,18 @@ class AuthorFrontend(frontend.ModelFrontend):
     delete_permission = True
     add_permission = True
     list_per_page = 100
+    toolbar_button = ('everything', 'everything_everything')
+    description = f"everything_everything everything_everything everything_everything " \
+                   f"everything_everything everything_everything everything_everything " \
+                   f"everything_everything everything_everything everything_everything " \
+                   f"everything_everything everything_everything everything_everything"
     # show_permission = True
+
+    def everything(self):
+        print(self)
+
+    def everything_everything(self):
+        print(self)
 
     def check(self, object):
         print(object.name)

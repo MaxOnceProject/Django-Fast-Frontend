@@ -6,3 +6,9 @@ register = template.Library()
 @register.filter
 def split(value, arg):
     return value.split(arg)
+
+
+@register.filter()
+def label(value):
+    value = value.replace('_', ' ')
+    return value.title()
