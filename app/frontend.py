@@ -3,10 +3,10 @@ from django.http import HttpResponseRedirect
 import frontend
 from app.models import Author
 
-# class Frontend(frontend.Config):
-#     authentication = False
-#
-# frontend.site.register_config(Frontend)
+class Frontend(frontend.Config):
+    authentication = False
+
+frontend.site.register_config(Frontend)
 
 # Register your models here.
 class AuthorFrontend(frontend.ModelFrontend):

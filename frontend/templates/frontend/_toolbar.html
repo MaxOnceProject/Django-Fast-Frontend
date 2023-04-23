@@ -1,0 +1,20 @@
+<!-- frontend_admin/templates/frontend_admin/admin.html -->
+{% load django_bootstrap5 %}
+{% load django_fast_frontend %}
+
+<!-- Toolbar -->
+<div class="d-flex mb-3">
+    {% if option.table.add %}
+        <td>
+            <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_add"%}">{% bootstrap_button button_class="btn btn-secondary me-2" button_type="button" content="<i class='bi bi-plus-square'></i> Add" %}</a>
+        </td>
+    {% endif %}
+    {% for toolbar_button in table.toolbar_button %}
+        <form method="post" class="needs-validation" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=toolbar_button %}">
+            {% csrf_token %}
+            {% with toolbar_button|label as toolbar_button_label %}
+                {% bootstrap_button button_class="btn btn-primary me-2" button_type="submit" content=toolbar_button_label %}
+            {% endwith %}
+        </form>
+    {% endfor %}
+</div>

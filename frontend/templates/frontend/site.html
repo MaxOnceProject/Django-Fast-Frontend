@@ -21,29 +21,15 @@
                 {% include 'frontend/_form.html' %}
             {% endif %}
         {% else %}
-            <div class="col d-flex mb-4">
-                {{ site.description }}
-            </div>
-            {% if option.table.toolbar_button %}
-                <!-- Toolbar -->
-                <div class="d-flex mb-3">
-                    {% if option.table.add %}
-                        <td>
-                            <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_add"%}">{% bootstrap_button button_class="btn btn-secondary me-2" button_type="button" content="<i class='bi bi-plus-square'></i> Add" %}</a>
-                        </td>
-                    {% endif %}
-                    {% for toolbar_button in table.toolbar_button %}
-                        <form method="post" class="needs-validation" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=toolbar_button %}">
-                            {% csrf_token %}
-                            {% with toolbar_button|label as toolbar_button_label %}
-                                {% bootstrap_button button_class="btn btn-primary me-2" button_type="submit" content=toolbar_button_label %}
-                            {% endwith %}
-                        </form>
-                    {% endfor %}
+            {% if option.site.description %}
+                <div class="col d-flex mb-4">
+                    {{ site.description }}
                 </div>
-
             {% endif %}
             {% if option.table.show %}
+                {% if option.table.toolbar_button %}
+                    {% include 'frontend/_toolbar.html' %}
+                {% endif %}
                 {% if option.table.search %}
                     {% include 'frontend/_search.html' %}
                 {% endif %}

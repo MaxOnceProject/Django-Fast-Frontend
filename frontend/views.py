@@ -3,219 +3,343 @@ from django.http import HttpResponseRedirect
 from django.views.generic import TemplateView
 from django.contrib.auth import views as auth_views
 from django.apps import apps
-from django.core.paginator import Paginator
-from django.db.models import Q
-from .forms import generate_form_for_model
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.shortcuts import render, redirect
 from . import site
-from .sites import Config
 
 
 def favicon_view(request):
+    """
+    Handles favicon requests and redirects the user back to the referring page.
+
+    :param request: Django HttpRequest object
+    :return: HttpResponseRedirect object to redirect the user to the referring page
+    """
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-def frontend_view(request, app_name=None, model_name=None, action=None, id=None):
-    global_config = site.load_global_config()
 
-    if getattr(global_config, 'authentication', True) and not request.user.is_authenticated:
-        return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+class FrontendModelView(TemplateView):
+    """
+    A generic frontend view that can be used to display models and handle common actions like
+    creating, updating, and deleting model instances. This view also handles pagination and searching.
+    """
 
-    register = site.load_navbar_register()
-    if global_config.authentication:
-        cards = register.copy()
-        del cards['accounts']
-    else:
-        cards = register
+    def get(self, request, *args, app_name=None, model_name=None, action=None, id=None):
+        """
+        A generic frontend view that can be used to display models and handle common actions like
+        creating, updating, and deleting model instances. This view also handles pagination and searching.
+        """
 
-    if app_name is None:
-        return site.http_home_response(
+        # load global site config
+        global_config = site.load_global_config()
+        global_authentication = getattr(global_config, 'authentication', True)
+
+        # if global authentication is active this validates that the user is authenticated
+        if global_authentication and not request.user.is_authenticated:
+            return site.http_login_redirect(request)
+
+        # pre-load navbar
+        navbar_registry = site.load_navbar_registry()
+
+        # landing page for website
+        if app_name is None:
+            cards = site.load_cards()
+            return site.http_home_response(
+                request,
+                context={
+                    "meta": {
+                        "cards": cards,
+                        "title": "Home",
+                    },
+                })
+
+        # Landing page for app
+        if model_name is None:
+            return site.http_home_response(
+                request,
+                context={
+                    "meta": {
+                        "cards": site.load_navbar_registry_by_app(navbar_registry, app_name),
+                        "title": "Home",
+                    },
+                })
+
+        # load model site config
+        model = apps.get_model(app_name, model_name)
+        model_config = site.load_model_config(model)
+        model_authentication = getattr(model_config, 'login_required', True)
+
+        # if model authentication is active this validates that the user is authenticated
+        if model_authentication and not request.user.is_authenticated:
+            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+
+        fields = site.load_model_fields(model_config)
+
+        # create model forms
+        form_class = site.generate_form_for_model(model, fields)
+        form = form_class()
+
+        if action in ['table_add', 'table_change', 'table_delete']:
+
+            if id and action in ['table_change'] and model_config.change_permission:
+                object = model.objects.get(id=id)
+                form = form_class(request.POST or None, initial=object.__dict__)
+                if model_config.readonly_fields:
+                    for readonly_fields in model_config.readonly_fields:
+                        form.fields[readonly_fields].widget.attrs['readonly'] = True
+
+            if request.method == "POST":
+                if action == 'table_change' and model_config.change_permission:
+                    object = model.objects.get(id=id)
+                    form = form_class(request.POST, instance=object)
+                    if form.is_valid():
+                        form.save()
+                    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+            if request.method == "POST":
+                if action == 'table_add' and model_config.add_permission:
+                    form = form_class(request.POST)
+                    if form.is_valid():
+                        form.save()
+                    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+            if request.method == "POST":
+                if action == 'table_delete' and model_config.delete_permission:
+                    object = model.objects.get(id=id)
+                    object.delete()
+                    return HttpResponseRedirect(f"/{app_name}/{model_name}")
+
+        if request.method == "POST":
+            if action in getattr(model_config, 'toolbar_button'):
+                getattr(model_config(), action)()
+                return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+        if request.method == "POST":
+            if action in getattr(model_config, 'table_inline_button'):
+                object = model.objects.get(id=id)
+                getattr(model_config(), action)(object)
+                return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+        # initiate data object
+        objects, table_fields = site.load_model_objects(model, fields)
+
+        # Search
+        search_fields = getattr(model_config, 'search_fields', None)
+        search_query = request.GET.get("q", "")
+        objects = site.load_model_filter(objects, search_fields, search_query)
+
+        # Pagination
+        list_per_page = getattr(model_config, 'list_per_page', 100)
+        objects = site.load_pagination(request, objects, list_per_page)
+
+        table_inline_button = getattr(model_config, 'table_inline_button', [])
+        table_fields += site.load_model_actions(table_inline_button)
+
+        return site.http_model_response(
             request,
             context={
                 "meta": {
-                    "cards": cards,
-                    "title": "Home",
+                    "title": getattr(model._meta, 'verbose_name_plural',
+                                     getattr(model._meta, 'verbose_name', model._meta.model_name)),
                 },
+                "option": {
+                    "site": {
+                        "title": getattr(model_config, 'title', True),
+                        "description": getattr(model_config, 'description', False),
+                    },
+                    "table": {
+                        "toolbar_button": getattr(model_config, 'toolbar_button', False),
+                        "cards": getattr(model_config, 'cards', False),
+                        "show": getattr(model_config, 'table_show', True),
+                        "add": getattr(model_config, 'add_permission', False),
+                        "change": getattr(model_config, 'change_permission', False),
+                        "search": getattr(model_config, 'search_fields', False),
+                        "inline_button": getattr(model_config, 'table_inline_button', False),
+                    },
+                },
+                "site": {
+                    "description": getattr(model_config, 'description', False),
+                },
+                "table": {
+                    "form": form or None,
+                    "objects": objects,
+                    "fields": table_fields,
+                    "inline_button": table_inline_button,
+                    "toolbar_button": getattr(model_config, 'toolbar_button', None),
+                    "search_query": search_query
+                }
             })
 
-    # Landing page for app
-    if model_name is None:
-        return site.http_home_response(
-            request,
-            context={
-                "meta": {
-                    "cards": site.create_navbar_register_by_app(register, app_name),
-                    "title": "Home",
-                },
-            })
+    def post(self, request, *args, app_name=None, model_name=None, action=None, id=None):
+        """
+        Handles POST requests for the FrontendModelView.
 
+        :param request: Django HttpRequest object
+        :param args: Additional arguments
+        :param app_name: Name of the Django app
+        :param model_name: Name of the model
+        :param action: The action to be performed (add, change, delete)
+        :param id: The ID of the model instance to be modified
+        :return: A HttpResponse object with the appropriate response for the request
+        """
 
-    model = apps.get_model(app_name, model_name)
-    frontend_config = site._registry[model].__class__
+        # load global site config
+        global_config = site.load_global_config()
+        global_authentication = getattr(global_config, 'authentication', True)
 
-    if getattr(frontend_config, 'login_required', True) and not request.user.is_authenticated:
-        return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+        # if global authentication is active this validates that the user is authenticated
+        if global_authentication and not request.user.is_authenticated:
+            return site.http_login_redirect(request)
 
-    fields = list(getattr(frontend_config, 'fields', []))
-    form_class = generate_form_for_model(model, fields)
-    form = form_class()
+        # load model site config
+        model = apps.get_model(app_name, model_name)
+        model_config = site.load_model_config(model)
+        model_authentication = getattr(model_config, 'login_required', True)
 
-    if request.method == "POST":
-        if action in getattr(frontend_config, 'toolbar_button'):
-            getattr(frontend_config(), action)()
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        # if model authentication is active this validates that the user is authenticated
+        if model_authentication and not request.user.is_authenticated:
+            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
 
-    if request.method == "POST":
-        if action in getattr(frontend_config, 'table_inline_button'):
-            object = model.objects.get(id=id)
-            getattr(frontend_config(), action)(object)
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        fields = site.load_model_fields(model_config)
 
-    if request.method == "POST":
-        if action == 'table_change' and frontend_config.change_permission:
+        # create model forms
+        form_class = site.generate_form_for_model(model, fields)
+
+        if action == 'table_change' and model_config.change_permission:
             object = model.objects.get(id=id)
             form = form_class(request.POST, instance=object)
             if form.is_valid():
                 form.save()
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-    if request.method == "POST":
-        if action == 'table_add' and frontend_config.add_permission:
+        if action == 'table_add' and model_config.add_permission:
             form = form_class(request.POST)
             if form.is_valid():
                 form.save()
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-    if request.method == "POST":
-        if action == 'table_delete' and frontend_config.delete_permission:
+        if action == 'table_delete' and model_config.delete_permission:
             object = model.objects.get(id=id)
             object.delete()
             return HttpResponseRedirect(f"/{app_name}/{model_name}")
 
-    if id and action in ['table_change'] and frontend_config.change_permission:
-        object = model.objects.get(id=id)
-        form = form_class(request.POST or None, initial=object.__dict__)
-        if frontend_config.readonly_fields:
-            for readonly_fields in frontend_config.readonly_fields:
-                form.fields[readonly_fields].widget.attrs['readonly'] = True
+        if action in getattr(model_config, 'toolbar_button'):
+            getattr(model_config(), action)()
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-    if 'id' in fields:
-        objects = model.objects.values(*fields)
-    elif not fields:
-        objects = model.objects.values()
-        if objects.exists():
-            fields = [field for field in objects[0].keys() if field != 'id']
-        else:
-            fields = [field.name for field in model._meta.fields if field.name != 'id']
-    else:
-        objects = model.objects.values(*fields, 'id')
+        if action in getattr(model_config, 'table_inline_button'):
+            object = model.objects.get(id=id)
+            getattr(model_config(), action)(object)
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-
-    # Search
-    search_fields = getattr(frontend_config, 'search_fields', None)
-    search_query = request.GET.get("q", "")
-    if search_fields:
-        frontend_config.search_fields_option = True
-        if search_query:
-            search_query_list = [Q(**{f"{field}__icontains": search_query}) for field in search_fields]
-            objects = objects.filter(Q(*search_query_list, _connector=Q.OR))
-
-    # Pagination
-    paginator = Paginator(objects, getattr(frontend_config, 'list_per_page', 100))  # Show x items per page
-    page = request.GET.get("page")
-    objects = paginator.get_page(page)
-
-    table_inline_button = getattr(frontend_config, 'table_inline_button', [])
-
-    if table_inline_button:
-        frontend_config.inline_button_option = True
-        for action in table_inline_button:
-            fields += [action]
-
-    context = {
-        "meta": {
-            "navbar": site.create_navbar_register(),
-            "title": getattr(model._meta, 'verbose_name_plural', getattr(model._meta, 'verbose_name', model._meta.model_name)),
-            "css": getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css'),
-        },
-        "option": {
-            "site": {
-                "title": True,
-                "description": getattr(frontend_config, 'description', False),
-            },
-            "table": {
-                "toolbar_button": getattr(frontend_config, 'toolbar_button', False),
-                "cards": getattr(frontend_config, 'cards', False),
-                "show": getattr(frontend_config, 'table_show', True),
-                "add": getattr(frontend_config, 'add_permission', False),
-                "change": getattr(frontend_config, 'change_permission', False),
-                "search": getattr(frontend_config, 'search_fields_option', False),
-                "inline_button": getattr(frontend_config, 'inline_button_option', False),
-            },
-        },
-        "site": {
-            "description": getattr(frontend_config, 'description', False),
-        },
-        "table": {
-            "form": form,
-            "objects": objects,
-            "fields": fields,
-            "inline_button": getattr(frontend_config, 'table_inline_button', None),
-            "toolbar_button": getattr(frontend_config, 'toolbar_button', None),
-            "search_query": search_query
-        }
-    }
-    return render(request, "frontend/site.html", context)
 
 class FrontendAbstractView(TemplateView):
+    """
+    An abstract view that serves as a base for frontend views, providing common context data.
+    """
+
     title = ''
 
     def get_context_data(self, **kwargs):
+        """
+        An abstract view that serves as a base for frontend views, providing common context data.
+        """
+
         context = super().get_context_data()
         context['meta'] = {
-            "navbar": site.create_navbar_register(),
+            "navbar": site.load_navbar_registry(),
             "title": self.title,
             "css": getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css'),
         }
         return context
 
 class FrontendLoginView(FrontendAbstractView, auth_views.LoginView):
+    """
+    A frontend view for handling user login.
+    """
+
     title = 'Login'
 
 class FrontendLogoutView(FrontendAbstractView, auth_views.LogoutView):
+    """
+    A frontend view for handling user logout.
+    """
+
     title = 'Logout'
 
 class FrontendPasswordChangeView(FrontendAbstractView, auth_views.PasswordChangeView):
+    """
+    A frontend view for handling user logout.
+    """
+
     title = 'Password Change'
 
 class FrontendPasswordChangeDoneView(FrontendAbstractView, auth_views.PasswordChangeDoneView):
+    """
+    A frontend view for handling user logout.
+    """
+
     title = 'Password Change Done'
 
 class FrontendPasswordResetView(FrontendAbstractView, auth_views.PasswordResetView):
+    """
+    A frontend view for handling user password reset requests.
+    """
+
     title = 'Password Reset'
 
 class FrontendPasswordResetDoneView(FrontendAbstractView, auth_views.PasswordResetDoneView):
+    """
+    A frontend view for handling user password reset requests.
+    """
+
     title = 'Password Reset Done'
 
 class FrontendPasswordResetConfirmView(FrontendAbstractView, auth_views.PasswordResetConfirmView):
+    """
+    A frontend view for handling user password reset requests.
+    """
+
     title = 'Password Reset Confirm'
 
 class FrontendPasswordResetCompleteView(FrontendAbstractView, auth_views.PasswordResetCompleteView):
+    """
+    A frontend view for displaying a confirmation message after a successful password reset.
+    """
+
     title = 'Password Reset Complete'
 
 
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
-from django.shortcuts import render, redirect
-
-
 class FrontendSignUpView(FrontendAbstractView):
+    """
+    A frontend view for displaying a confirmation message after a successful password reset.
+    """
+
     title = 'Sign Up'
 
     def get_context_data(self, **kwargs):
+        def get_context_data(self, **kwargs):
+            """
+            Retrieves context data
+            :param kwargs: Additional keyword arguments
+            :return: A dictionary with the context data
+            """
         context = super().get_context_data()
         context['form'] = UserCreationForm()
         return context
 
     def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests for user registration.
+
+        :param request: Django HttpRequest object
+        :param args: Additional arguments
+        :param kwargs: Additional keyword arguments
+        :return: HttpResponseRedirect object to redirect the user to the login redirect URL if registration is successful,
+                 otherwise, returns a rendered form with errors
+        """
+
         form = UserCreationForm(self.request.POST)
         if form.is_valid():
             user = form.save()
