@@ -3,10 +3,15 @@ from django.http import HttpResponseRedirect
 import frontend
 from app.models import Author
 
+# class Frontend(frontend.Config):
+#     authentication = False
+#
+# frontend.site.register_config(Frontend)
 
 # Register your models here.
 class AuthorFrontend(frontend.ModelFrontend):
     # fields = ('name', 'title')
+    login_required = True
     list_display = ('name', 'title')
     table_inline_button = ('check', 'uncheck')
     table_add = False

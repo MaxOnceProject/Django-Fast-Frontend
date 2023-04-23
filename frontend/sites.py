@@ -1,10 +1,23 @@
 from importlib import import_module
 from django.apps import apps
+from django.conf import settings
+from django.shortcuts import render
+
 
 class FrontendSite:
     def __init__(self, name="frontend"):
         self._registry = {}
         self.name = name
+
+    def register_config(self, config_class=None):
+        if config_class is None:
+            config_class = Config
+        self._registry['config'] = config_class()
+
+    def register_accounts(self, config_class=None):
+        if config_class is None:
+            config_class = AccountFrontend
+        self._registry['accounts'] = config_class()
 
     def register(self, model, frontend_class=None):
         if frontend_class is None:
@@ -24,10 +37,32 @@ class FrontendSite:
             except ImportError:
                 continue
 
-    def create_navbar_register(self):
+    def load_global_config(self):
+        if 'config' in self._registry:
+            global_config = site._registry['config'].__class__
+        else:
+            global_config = Config()
+        return global_config
+
+    def load_navbar_register(self):
         register = {}
 
         for model in self._registry.keys():
+            if model == 'config':
+                continue
+            if model == 'accounts':
+                register['accounts'] = {'verbose_name': 'Account',
+                                      'models': []}
+                register['accounts']['models'] += [{'name': 'login',
+                                                  'verbose_name': 'Login',
+                                                  'description': 'Login'},
+                                                   {'name': 'signup',
+                                                    'verbose_name': 'Sign Up',
+                                                    'description': 'Sign Up'},
+                                                   {'name': 'password_change',
+                                                    'verbose_name': 'Change Password',
+                                                    'description': 'Change Password'},]
+                continue
             app_name = model._meta.app_config.name
             app_verbose_name = getattr(model._meta.app_config, 'verbose_name', model._meta.app_label)
             model_name = model._meta.model_name
@@ -49,6 +84,15 @@ class FrontendSite:
         from .urls import urlpatterns
         return urlpatterns, "", self.name
 
+    def http_home_response(self, request, context):
+        if not 'meta' in context:
+            context['meta'] = {}
+        if not 'navbar' in context['meta']:
+            context['meta']['navbar'] = self.load_navbar_register()
+        if not 'css' in context['meta']:
+            context['meta']['css'] = getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css')
+        return render(request, "frontend/home.html", context)
+
 
 site = FrontendSite()
 
@@ -57,3 +101,11 @@ class ModelFrontend:
     def __init__(self, model=None):
         self.model = model
         self.fields = "__all__"
+
+
+class Config:
+    authentication = True
+
+class AccountFrontend:
+    def __init__(self):
+        self.authentication = True

@@ -2,7 +2,11 @@
 
 from .sites import  site, \
                     FrontendSite, \
-                    ModelFrontend
+                    ModelFrontend, \
+                    Config, \
+                    AccountFrontend
+
+from .accounts import site as accounts
 
 # import frontend.urls as urls
 

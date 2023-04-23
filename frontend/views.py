@@ -1,62 +1,57 @@
-# frontend_admin/views.py
 from django.conf import settings
-from django.http import HttpResponseRedirect, HttpResponseNotFound
-from django.shortcuts import render, redirect
-from django_filters import ChoiceFilter
-
-from .forms import generate_form_for_model
-from . import site
+from django.http import HttpResponseRedirect
+from django.views.generic import TemplateView
+from django.contrib.auth import views as auth_views
 from django.apps import apps
 from django.core.paginator import Paginator
 from django.db.models import Q
+from .forms import generate_form_for_model
+from . import site
+from .sites import Config
 
 
 def favicon_view(request):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 def frontend_view(request, app_name=None, model_name=None, action=None, id=None):
-    register = site.create_navbar_register()
-    # Landing page for root
-    if app_name == 'favicon.ico':
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    global_config = site.load_global_config()
+
+    if getattr(global_config, 'authentication', True) and not request.user.is_authenticated:
+        return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+
+    register = site.load_navbar_register()
+    if global_config.authentication:
+        cards = register.copy()
+        del cards['accounts']
+    else:
+        cards = register
+
     if app_name is None:
-        context = {
-            "meta": {
-                "navbar": register,
-                "cards": register,
-                "title": "Home",
-                "css": getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css'),
-            },
-            "option": {
-                "table": {
-                    "add": False,
-                    "show": False,
-                }
-            },
-        }
-        return render(request, "frontend/home.html", context)
+        return site.http_home_response(
+            request,
+            context={
+                "meta": {
+                    "cards": cards,
+                    "title": "Home",
+                },
+            })
+
     # Landing page for app
     if model_name is None:
-        context = {
-            "meta": {
-                "navbar": register,
-                "cards": site.create_navbar_register_by_app(register, app_name),
-                "title": "Home",
-                "css": getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css'),
-            },
-            "option": {
-                "table": {
-                    "add": False,
-                    "show": False,
-                }
-            },
-        }
-        return render(request, "frontend/home.html", context)
+        return site.http_home_response(
+            request,
+            context={
+                "meta": {
+                    "cards": site.create_navbar_register_by_app(register, app_name),
+                    "title": "Home",
+                },
+            })
+
 
     model = apps.get_model(app_name, model_name)
     frontend_config = site._registry[model].__class__
 
-    if getattr(frontend_config, 'toolbar_button', True) and not request.user.is_authenticated:
+    if getattr(frontend_config, 'login_required', True) and not request.user.is_authenticated:
         return redirect(f"{settings.LOGIN_URL}?next={request.path}")
 
     fields = list(getattr(frontend_config, 'fields', []))
@@ -169,3 +164,64 @@ def frontend_view(request, app_name=None, model_name=None, action=None, id=None)
         }
     }
     return render(request, "frontend/site.html", context)
+
+class FrontendAbstractView(TemplateView):
+    title = ''
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context['meta'] = {
+            "navbar": site.create_navbar_register(),
+            "title": self.title,
+            "css": getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css'),
+        }
+        return context
+
+class FrontendLoginView(FrontendAbstractView, auth_views.LoginView):
+    title = 'Login'
+
+class FrontendLogoutView(FrontendAbstractView, auth_views.LogoutView):
+    title = 'Logout'
+
+class FrontendPasswordChangeView(FrontendAbstractView, auth_views.PasswordChangeView):
+    title = 'Password Change'
+
+class FrontendPasswordChangeDoneView(FrontendAbstractView, auth_views.PasswordChangeDoneView):
+    title = 'Password Change Done'
+
+class FrontendPasswordResetView(FrontendAbstractView, auth_views.PasswordResetView):
+    title = 'Password Reset'
+
+class FrontendPasswordResetDoneView(FrontendAbstractView, auth_views.PasswordResetDoneView):
+    title = 'Password Reset Done'
+
+class FrontendPasswordResetConfirmView(FrontendAbstractView, auth_views.PasswordResetConfirmView):
+    title = 'Password Reset Confirm'
+
+class FrontendPasswordResetCompleteView(FrontendAbstractView, auth_views.PasswordResetCompleteView):
+    title = 'Password Reset Complete'
+
+
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.shortcuts import render, redirect
+
+
+class FrontendSignUpView(FrontendAbstractView):
+    title = 'Sign Up'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context['form'] = UserCreationForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = UserCreationForm(self.request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(self.request, user)
+            return HttpResponseRedirect(getattr(settings, 'LOGIN_REDIRECT_URL', '/'))
+        else:
+            context = {'form': form}
+            return render(request, "accounts/form.html", context)
+
