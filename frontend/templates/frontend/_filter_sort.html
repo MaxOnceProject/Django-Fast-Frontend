@@ -1,4 +1,6 @@
 <!-- filter_and_sort_modal.html -->
+{% load django_bootstrap5 %}
+
 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterAndSortModal">
     Filter and Sort
 </button>
@@ -11,9 +13,29 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                Sorted by: {{ table.sort_args }}
-                Filtered by: {{ table.filter_args }}
+                {% if table.sort_args or table.filter_args %}
+                    <div class="mb-3">
+                        <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 %}">{% bootstrap_button button_class="btn-outline-primary" button_type="button" content="x Clear" %}</a>
+                    </div>
+                {% endif %}
+                {% if table.sort_args %}
+                    <div class="mb-3">
+                        Sorted by: <span class="badge bg-secondary">{{ table.sort_args|title }}</span>
+                    </div>
+                {% endif %}
+                {% if table.filter_args %}
+                    <div class="mb-3">
+                        Filtered by:
+                        {% for key, values in table.filter_args.items %}
+                            {% for value in values %}
+                                <span class="badge bg-secondary">{{ key|title }}: {{ value|title }}</span>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% if table.sort_args or table.filter_args %}
                 <hr class="mt-1 mb-1"/>
+            {% endif %}
                 <div class="mb-3">
                     <label><b>Sort by</b></label>
                     {% for field in table.sort_fields %}
@@ -31,46 +53,46 @@
                 </div>
                 <hr class="mt-1 mb-1"/>
                 <label><b>Filter by</b></label>
-                    <form method="get">
+                <form method="get">
 
-                {% for filter_field, filter_choices in table.list_filter_options.items %}
-                    <div class="accordion" id="accordion{{ filter_field }}">
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ filter_field }}" aria-expanded="false" aria-controls="collapse{{ filter_field }}" collapsed>
-                                    {{ filter_field|title }}
-                                </button>
-                            </h2>
-                            <div id="collapse{{ filter_field }}" class="accordion-collapse collapse show" data-bs-parent="#accordion{{ filter_field }}">
-                                <div class="accordion-body">
-                                    {% for choices in filter_choices %}
-                                        <div class="form-check">
-                                          <input class="form-check-input" type="checkbox" value="{{ choices }}" name="{{ filter_field }}" id="checkbox{{ filter_field }}{{ choices }}">
-                                          <label class="form-check-label" for="checkbox{{ filter_field }}{{ choices }}">
-                                            {{ choices|title }}
-                                          </label>
-                                        </div>
-                                    {% endfor %}
+                    {% for filter_field, filter_choices in table.list_filter_options.items %}
+                        <div class="accordion" id="accordion{{ filter_field }}">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ filter_field }}" aria-expanded="false" aria-controls="collapse{{ filter_field }}" collapsed>
+                                        {{ filter_field|title }}
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ filter_field }}" class="accordion-collapse collapse show" data-bs-parent="#accordion{{ filter_field }}">
+                                    <div class="accordion-body">
+                                        {% for choices in filter_choices %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="{{ choices }}" name="{{ filter_field }}" id="checkbox{{ filter_field }}{{ choices }}">
+                                                <label class="form-check-label" for="checkbox{{ filter_field }}{{ choices }}">
+                                                    {{ choices|title }}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                {% endfor %}
-{#  {% for filter_field, filter_choices in table.list_filter_options.items %}#}
-{#  <label for="{{ filter_field }}" class="form-label">{{ filter_field|capfirst }}</label>#}
-{#  <select class="form-select" id="{{ filter_field }}" name="{{ filter_field }}" onchange="applyListFilter(this)">#}
-{#    <option value="">----------</option>#}
-{#    {% for choice in filter_choices %}#}
-{#    {% if choice|length_is:2 %}#}
-{#    <option value="{{ choice.0 }}" {% if request.GET.filter_field == choice.0|escapejs %}selected{% endif %}>{{ choice.1 }}</option>#}
-{#    {% else %}#}
-{#    <option value="{{ choice }}" {% if request.GET.filter_field == choice|escapejs %}selected{% endif %}>{{ choice }}</option>#}
-{#    {% endif %}#}
-{#    {% endfor %}#}
-{#  </select>#}
-{#  {% endfor %}#}
+                    {% endfor %}
+                    {#  {% for filter_field, filter_choices in table.list_filter_options.items %}#}
+                    {#  <label for="{{ filter_field }}" class="form-label">{{ filter_field|capfirst }}</label>#}
+                    {#  <select class="form-select" id="{{ filter_field }}" name="{{ filter_field }}" onchange="applyListFilter(this)">#}
+                    {#    <option value="">----------</option>#}
+                    {#    {% for choice in filter_choices %}#}
+                    {#    {% if choice|length_is:2 %}#}
+                    {#    <option value="{{ choice.0 }}" {% if request.GET.filter_field == choice.0|escapejs %}selected{% endif %}>{{ choice.1 }}</option>#}
+                    {#    {% else %}#}
+                    {#    <option value="{{ choice }}" {% if request.GET.filter_field == choice|escapejs %}selected{% endif %}>{{ choice }}</option>#}
+                    {#    {% endif %}#}
+                    {#    {% endfor %}#}
+                    {#  </select>#}
+                    {#  {% endfor %}#}
                     <button type="submit" class="btn btn-primary ms-2">Submit Filter</button>
-                    </form>
+                </form>
             </div>
         </div>
     </div>
