@@ -47,7 +47,6 @@ class FrontendModelView(TemplateView):
             cards = site.load_cards()
             return site.http_home_response(
                 request,
-                global_config,
                 context={
                     "meta": {
                         "cards": cards,
@@ -59,7 +58,6 @@ class FrontendModelView(TemplateView):
         if model_name is None:
             return site.http_home_response(
                 request,
-                global_config,
                 context={
                     "meta": {
                         "cards": site.load_navbar_registry_by_app(navbar_registry, app_name),
@@ -91,38 +89,6 @@ class FrontendModelView(TemplateView):
                     for readonly_fields in model_config.readonly_fields:
                         form.fields[readonly_fields].widget.attrs['readonly'] = True
 
-            if request.method == "POST":
-                if action == 'table_change' and model_config.change_permission:
-                    object = model.objects.get(id=id)
-                    form = form_class(request.POST, instance=object)
-                    if form.is_valid():
-                        form.save()
-                    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-
-            if request.method == "POST":
-                if action == 'table_add' and model_config.add_permission:
-                    form = form_class(request.POST)
-                    if form.is_valid():
-                        form.save()
-                    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-
-            if request.method == "POST":
-                if action == 'table_delete' and model_config.delete_permission:
-                    object = model.objects.get(id=id)
-                    object.delete()
-                    return HttpResponseRedirect(f"/{app_name}/{model_name}")
-
-        if request.method == "POST":
-            if action in getattr(model_config, 'toolbar_button'):
-                getattr(model_config(), action)()
-                return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-
-        if request.method == "POST":
-            if action in getattr(model_config, 'table_inline_button'):
-                object = model.objects.get(id=id)
-                getattr(model_config(), action)(object)
-                return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-
         # initiate data object
         objects, table_fields = site.load_model_objects(model, fields)
 
@@ -150,7 +116,6 @@ class FrontendModelView(TemplateView):
 
         return site.http_model_response(
             request,
-            global_config,
             context={
                 "option": {
                     "site": {

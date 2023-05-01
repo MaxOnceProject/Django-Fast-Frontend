@@ -1,3 +1,4 @@
+from abc import ABC
 from importlib import import_module
 from django.apps import apps
 from django.conf import settings
@@ -6,6 +7,9 @@ from django.db.models import Q
 from django.shortcuts import render, redirect
 
 from frontend.forms import generate_form_for_model
+
+class FrontendSiteAbstract(ABC):
+    pass
 
 
 class FrontendSite:
@@ -20,32 +24,32 @@ class FrontendSite:
         self.navbar_registry = None
         self.cards = None
 
-    def register_config(self, config_class=None):
-        """
-        Registers a global frontend configuration class.
-        """
-
-        if config_class is None:
-            config_class = Config
-        self._registry['config'] = config_class()
-
-    def register_accounts(self, config_class=None):#
-        """
-        Registers an accounts frontend configuration class.
-        """
-
-        if config_class is None:
-            config_class = AccountFrontend
-        self._registry['accounts'] = config_class()
-
     def register(self, model, frontend_class=None):
         """
         Registers a model with the frontend site using the given frontend class.
         """
 
         if frontend_class is None:
-            frontend_class = ModelFrontend
+            AttributeError('Please specify a frontend class')
         self._registry[model] = frontend_class()
+
+    def register_config(self, config_class=None):
+        """
+        Registers a global frontend configuration class.
+        """
+
+        if config_class is None:
+            raise AttributeError('Please specify a configuration class')
+        self.register(model='config', frontend_class=config_class)
+
+    def register_accounts(self, account_class=None):
+        """
+        Registers an accounts frontend configuration class.
+        """
+
+        if account_class is None:
+            account_class = AccountFrontend
+        self.register(model='accounts', frontend_class=account_class)
 
     def unregister(self, model):
         """
@@ -73,10 +77,7 @@ class FrontendSite:
         Loads the global frontend configuration.
         """
 
-        if 'config' in self._registry:
-            self.global_config = self._registry['config'].__class__
-        else:
-            self.global_config = Config()
+        self.global_config = self._registry['config'].__class__
         return  self.global_config
 
     def load_model_config(self, model):
@@ -137,36 +138,42 @@ class FrontendSite:
         from .urls import urlpatterns
         return urlpatterns, "", self.name
 
-    def http_response(self, request, global_config, context, template=None):
+    def http_response(self, request, context=None, template=None):
         """
         Returns the urlpatterns and the frontend site namespace.
         """
 
+        if not self.global_config:
+            self.load_global_config()
+
+        if not self.navbar_registry:
+            self.load_navbar_registry()
+
         if not 'meta' in context:
             context['meta'] = {}
         if not 'navbar' in context['meta']:
-            context['meta']['navbar'] = self.load_navbar_registry()
+            context['meta']['navbar'] = self.navbar_registry
         if not 'css' in context['meta']:
-            context['meta']['css'] = getattr(global_config, 'css', 'css/custom.css')
+            context['meta']['css'] = getattr(self.global_config, 'css', 'css/custom.css')
         if not 'brand' in context['meta']:
-            context['meta']['brand'] = getattr(global_config, 'brand', 'Django Fast Frontend')
+            context['meta']['brand'] = getattr(self.global_config, 'brand', 'Django Fast Frontend')
         if not 'logo' in context['meta']:
-            context['meta']['logo'] = getattr(global_config, 'logo', 'img/django-fast-frontend-logo.png')
+            context['meta']['logo'] = getattr(self.global_config, 'logo', 'img/django-fast-frontend-logo.png')
         return render(request, template, context)
 
-    def http_home_response(self, request, global_config, context):
+    def http_home_response(self, request, context):
         """
         Handles HTTP response for the model pages.
         """
 
-        return self.http_response(request, global_config, context, template="frontend/home.html")
+        return self.http_response(request, context, template="frontend/home.html")
 
-    def http_model_response(self, request, global_config, context):
+    def http_model_response(self, request, context):
         """
         Handles HTTP response for the model pages.
         """
 
-        return self.http_response(request, global_config, context, template="frontend/site.html")
+        return self.http_response(request, context, template="frontend/site.html")
 
     def http_login_redirect(self, request):
         """
@@ -220,17 +227,6 @@ class FrontendSite:
             objects = model.objects.values(*fields, 'id')
         return objects, fields
 
-    # def load_model_filter(self, objects, search_fields, search_query):
-    #     """
-    #     Loads objects of a model with the specified fields.
-    #     """
-    #
-    #     if search_fields:
-    #         if search_query:
-    #             search_query_list = [Q(**{f"{field}__icontains": search_query}) for field in search_fields]
-    #             objects = objects.filter(Q(*search_query_list, _connector=Q.OR))
-    #     return objects
-
     def load_pagination(self, request, objects, list_per_page):
         """
         Loads a paginator for the objects and returns the paginated objects.
@@ -280,7 +276,10 @@ class FrontendSite:
             filter_options[field] = filter_field.choices if hasattr(filter_field, 'choices') and filter_field.choices else model.objects.values_list(field, flat=True).distinct()
         return filter_options
 
-site = FrontendSite()
+if getattr(settings, 'FRONTEND_SITE_CLASS', None):
+    site = getattr(settings, 'FRONTEND_SITE_CLASS')()
+else:
+    site = FrontendSite()
 
 
 class ModelFrontend:
@@ -299,6 +298,9 @@ class Config:
     """
 
     authentication = True
+    brand = str()
+    logo = str()
+    css = str()
 
 class AccountFrontend:
     """
