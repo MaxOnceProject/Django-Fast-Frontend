@@ -260,8 +260,9 @@ class FrontendSite:
         # Apply additional filters from filter_params
         if filter_fields and filter_args:
             query = Q()
-            for field, filter in filter_args.items():
-                query &= Q(**{f"{field}__in": filter})
+            for field in filter_fields:
+                if field in filter_args:
+                    query &= Q(**{f"{field}__in": filter_args[field]})
             objects = objects.filter(query)
 
 
