@@ -30,9 +30,20 @@
                 {% if option.table.toolbar_button %}
                     {% include 'frontend/_toolbar.html' %}
                 {% endif %}
-                {% if option.table.search %}
-                    {% include 'frontend/_search.html' %}
-                {% endif %}
+                <div class="row">
+                    <div class="col d-flex justify-content-end">
+                        <div class="p-1">
+                            {% if option.table.search %}
+                                {% include 'frontend/_search.html' %}
+                            {% endif %}
+                        </div>
+                        <div class="p-1">
+                            {% if option.table.filter_sort %}
+                                {% include "frontend/_filter_sort.html" %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
                 {% if option.table.cards %}
                     {% include 'frontend/_cards.html' %}
                 {% else %}

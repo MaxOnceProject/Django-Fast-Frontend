@@ -1,10 +1,7 @@
 <!-- frontend_admin/templates/frontend_admin/admin.html -->
 
-<div class="row">
-    <div class="col d-flex justify-content-end">
-        <form method="get" class="d-inline-flex">
-            <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search" class="form-control">
-            <button type="submit" class="btn btn-primary ms-2">Search</button>
-        </form>
-    </div>
-</div>
+<form method="get" class="d-inline-flex">
+    <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search" class="form-control">
+    <button type="submit" class="btn btn-primary ms-2">Search</button>
+</form>
+

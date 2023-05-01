@@ -136,7 +136,7 @@ FRONTEND_TITLE = 'My Website'
 FRONTEND_CUSTOM_CSS = 'css/custom.css'
 FRONTEND_AUTO_URL = False
 FRONTEND_URL = ''
-FRONTEND_AUTHENTICATION = True
+FRONTEND_AUTHENTICATION = False
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',

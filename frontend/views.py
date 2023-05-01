@@ -124,10 +124,20 @@ class FrontendModelView(TemplateView):
         # initiate data object
         objects, table_fields = site.load_model_objects(model, fields)
 
-        # Search
+        # get search, filter and sort
         search_fields = getattr(model_config, 'search_fields', None)
+        list_filter = getattr(model_config, 'list_filter', [])
+        sortable_by = getattr(model_config, 'sortable_by', [])
+        list_filter_options = site.get_filter_options(model, list_filter)
+
         search_query = request.GET.get("q", "")
-        objects = site.load_model_filter(objects, search_fields, search_query)
+        sort_args = request.GET.get("s", "")
+        request_dict = dict(request.GET)
+
+        filter_args = {filter: request_dict[filter] for filter in request_dict if filter not in ['q', 's'] and request.GET[filter] != ''}
+
+        # Apply search, filter and sort
+        objects = site.load_model_filter(objects, search_fields, search_query, list_filter, filter_args, sortable_by, sort_args)
 
         # Pagination
         list_per_page = getattr(model_config, 'list_per_page', 100)
@@ -155,6 +165,7 @@ class FrontendModelView(TemplateView):
                         "add": getattr(model_config, 'add_permission', False),
                         "change": getattr(model_config, 'change_permission', False),
                         "search": getattr(model_config, 'search_fields', False),
+                        "filter_sort": getattr(model_config, 'list_filter', False) or getattr(model_config, 'sortable_by', False),
                         "inline_button": getattr(model_config, 'table_inline_button', False),
                     },
                 },
@@ -167,7 +178,12 @@ class FrontendModelView(TemplateView):
                     "fields": table_fields,
                     "inline_button": table_inline_button,
                     "toolbar_button": getattr(model_config, 'toolbar_button', None),
-                    "search_query": search_query
+                    "search_query": search_query,
+                    "filter_fields": list_filter,
+                    "list_filter_options": list_filter_options,
+                    "filter_args": filter_args,
+                    "sort_fields": sortable_by,
+                    "sort_args": sort_args,
                 }
             })
 

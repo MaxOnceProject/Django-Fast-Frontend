@@ -7,3 +7,5 @@ from app.models import Author
 @admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):
     fields = ('name', 'title')
+    list_filter = ('name', 'title', 'birth_date')  # List of fields available for filtering
+

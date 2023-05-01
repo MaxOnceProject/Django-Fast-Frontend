@@ -217,16 +217,16 @@ class FrontendSite:
             objects = model.objects.values(*fields, 'id')
         return objects, fields
 
-    def load_model_filter(self, objects, search_fields, search_query):
-        """
-        Loads objects of a model with the specified fields.
-        """
-
-        if search_fields:
-            if search_query:
-                search_query_list = [Q(**{f"{field}__icontains": search_query}) for field in search_fields]
-                objects = objects.filter(Q(*search_query_list, _connector=Q.OR))
-        return objects
+    # def load_model_filter(self, objects, search_fields, search_query):
+    #     """
+    #     Loads objects of a model with the specified fields.
+    #     """
+    #
+    #     if search_fields:
+    #         if search_query:
+    #             search_query_list = [Q(**{f"{field}__icontains": search_query}) for field in search_fields]
+    #             objects = objects.filter(Q(*search_query_list, _connector=Q.OR))
+    #     return objects
 
     def load_pagination(self, request, objects, list_per_page):
         """
@@ -244,6 +244,41 @@ class FrontendSite:
                 table_fields += [action]
         return table_fields
 
+    def load_model_filter(self, objects, search_fields, search_query, filter_fields, filter_args, sort_fields, sort_args):
+        # Apply search filters
+        if search_fields and search_query:
+            query = Q()
+            # search_query_list = [Q(**{f"{field}__icontains": search_query}) for field in search_fields]
+            # objects = objects.filter(Q(*search_query_list, _connector=Q.OR))
+            for field in search_fields:
+                query |= Q(**{f"{field}__icontains": search_query})
+            objects = objects.filter(query)
+
+        # filter_params = {field: request.GET.get(field) for field in filter_fields}
+        # sort_params = {'order_by': request.GET.get('order_by')}
+
+        # Apply additional filters from filter_params
+        if filter_fields and filter_args:
+            query = Q()
+            for field, filter in filter_args.items():
+                query &= Q(**{f"{field}__in": filter})
+            objects = objects.filter(query)
+
+
+        # Apply sorting from sort_params
+        if sort_fields and sort_args:
+            sort_fields = list(sort_fields) + [f'-{field}' for field in sort_fields]
+            if sort_args and sort_args in sort_fields:
+                objects = objects.order_by(sort_args)
+
+        return objects
+
+    def get_filter_options(self, model, list_filter):
+        filter_options = {}
+        for field in list_filter:
+            filter_field = model._meta.get_field(field)
+            filter_options[field] = filter_field.choices if hasattr(filter_field, 'choices') and filter_field.choices else model.objects.values_list(field, flat=True).distinct()
+        return filter_options
 
 site = FrontendSite()
 
