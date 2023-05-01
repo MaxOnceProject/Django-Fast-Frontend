@@ -248,23 +248,19 @@ class FrontendSite:
         # Apply search filters
         if search_fields and search_query:
             query = Q()
-            # search_query_list = [Q(**{f"{field}__icontains": search_query}) for field in search_fields]
-            # objects = objects.filter(Q(*search_query_list, _connector=Q.OR))
             for field in search_fields:
                 query |= Q(**{f"{field}__icontains": search_query})
             objects = objects.filter(query)
-
-        # filter_params = {field: request.GET.get(field) for field in filter_fields}
-        # sort_params = {'order_by': request.GET.get('order_by')}
 
         # Apply additional filters from filter_params
         if filter_fields and filter_args:
             query = Q()
             for field in filter_fields:
                 if field in filter_args:
-                    query &= Q(**{f"{field}__in": filter_args[field]})
+                    # query &= Q(**{f"{field}__in": filter_args[field]})
+                    for filter_arg in filter_args[field]:
+                        query |= Q(**{f"{field}__icontains": filter_arg})
             objects = objects.filter(query)
-
 
         # Apply sorting from sort_params
         if sort_fields and sort_args:

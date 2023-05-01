@@ -6,10 +6,10 @@
     <thead>
     <tr>
         {% for field in table.fields %}
-            <th>{{ field }}</th>
+            <th>{{ field|title }}</th>
         {% endfor %}
         {% if option.table.change %}
-            <th>edit</th>
+            <th>Edit</th>
         {% endif %}
     </tr>
     </thead>
