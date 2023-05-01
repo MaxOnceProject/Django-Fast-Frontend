@@ -137,7 +137,7 @@ class FrontendSite:
         from .urls import urlpatterns
         return urlpatterns, "", self.name
 
-    def http_home_response(self, request, context):
+    def http_response(self, request, global_config, context, template=None):
         """
         Returns the urlpatterns and the frontend site namespace.
         """
@@ -147,23 +147,26 @@ class FrontendSite:
         if not 'navbar' in context['meta']:
             context['meta']['navbar'] = self.load_navbar_registry()
         if not 'css' in context['meta']:
-            context['meta']['css'] = getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css')
-        if not "title" in context['meta']:
-            context["title"] = "Home"
-        return render(request, "frontend/home.html", context)
+            context['meta']['css'] = getattr(global_config, 'css', 'css/custom.css')
+        if not 'brand' in context['meta']:
+            context['meta']['brand'] = getattr(global_config, 'brand', 'Django Fast Frontend')
+        if not 'logo' in context['meta']:
+            context['meta']['logo'] = getattr(global_config, 'logo', 'img/django-fast-frontend-logo.png')
+        return render(request, template, context)
 
-    def http_model_response(self, request, context):
+    def http_home_response(self, request, global_config, context):
         """
         Handles HTTP response for the model pages.
         """
 
-        if not 'meta' in context:
-            context['meta'] = {}
-        if not 'navbar' in context['meta']:
-            context['meta']['navbar'] = self.load_navbar_registry()
-        if not 'css' in context['meta']:
-            context['meta']['css'] = getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css')
-        return render(request, "frontend/site.html", context)
+        return self.http_response(request, global_config, context, template="frontend/home.html")
+
+    def http_model_response(self, request, global_config, context):
+        """
+        Handles HTTP response for the model pages.
+        """
+
+        return self.http_response(request, global_config, context, template="frontend/site.html")
 
     def http_login_redirect(self, request):
         """

@@ -132,8 +132,9 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # FRONTEND_URL = '/your-favorite-url-path/'
-FRONTEND_TITLE = 'My Website'
-FRONTEND_CUSTOM_CSS = 'css/custom.css'
+# FRONTEND_CUSTOM_CSS = 'css/custom.css'
+# FRONTEND_BRAND = 'Fast Frontend'
+# FRONTEND_LOGO = 'img/django-fast-frontend-logo-text.PNG'
 FRONTEND_AUTO_URL = False
 FRONTEND_URL = ''
 FRONTEND_AUTHENTICATION = False

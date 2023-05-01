@@ -1,8 +1,8 @@
 <!-- table.html -->
 {% extends 'frontend/base.html' %}
 
-{{% block content %}
-    <h1>{{ meta.title }}</h1>
+{% block content %}
+    <h1>{{ site.title }}</h1>
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
         {% for app_name, app in meta.cards.items %}
             {% for model in app.models %}

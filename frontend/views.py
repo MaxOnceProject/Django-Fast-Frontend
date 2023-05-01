@@ -47,6 +47,7 @@ class FrontendModelView(TemplateView):
             cards = site.load_cards()
             return site.http_home_response(
                 request,
+                global_config,
                 context={
                     "meta": {
                         "cards": cards,
@@ -58,6 +59,7 @@ class FrontendModelView(TemplateView):
         if model_name is None:
             return site.http_home_response(
                 request,
+                global_config,
                 context={
                     "meta": {
                         "cards": site.load_navbar_registry_by_app(navbar_registry, app_name),
@@ -148,11 +150,8 @@ class FrontendModelView(TemplateView):
 
         return site.http_model_response(
             request,
+            global_config,
             context={
-                "meta": {
-                    "title": getattr(model._meta, 'verbose_name_plural',
-                                     getattr(model._meta, 'verbose_name', model._meta.model_name)),
-                },
                 "option": {
                     "site": {
                         "title": getattr(model_config, 'title', True),
@@ -170,6 +169,8 @@ class FrontendModelView(TemplateView):
                     },
                 },
                 "site": {
+                    "title": getattr(model._meta, 'verbose_name_plural',
+                                     getattr(model._meta, 'verbose_name', model._meta.model_name)),
                     "description": getattr(model_config, 'description', False),
                 },
                 "table": {

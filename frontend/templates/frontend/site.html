@@ -10,7 +10,7 @@
     {% with request.path|split:"/" as segments %}
         <div class="col d-flex justify-content-between">
             {% if option.site.title %}
-                <h1>{{ meta.title }}</h1>
+                <h1>{{ site.title }}</h1>
             {% endif %}
             {% if segments.3 %}
                 <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 %}">{% bootstrap_button button_class="btn-outline-primary" button_type="button" content="Back" %}</a>
