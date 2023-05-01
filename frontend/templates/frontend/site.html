@@ -17,7 +17,7 @@
             {% endif %}
         </div>
         {% if segments.3 %}
-            {% if option.table.add %}
+            {% if option.table.add or option.table.change %}
                 {% include 'frontend/_form.html' %}
             {% endif %}
         {% else %}
@@ -26,10 +26,10 @@
                     {{ site.description }}
                 </div>
             {% endif %}
+            {% if option.table.toolbar_button or option.table.add %}
+                {% include 'frontend/_toolbar.html' %}
+            {% endif %}
             {% if option.table.show %}
-                {% if option.table.toolbar_button %}
-                    {% include 'frontend/_toolbar.html' %}
-                {% endif %}
                 <div class="row">
                     <div class="col d-flex justify-content-end">
                         <div class="p-1">

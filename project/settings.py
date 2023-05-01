@@ -135,6 +135,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # FRONTEND_CUSTOM_CSS = 'css/custom.css'
 # FRONTEND_BRAND = 'Fast Frontend'
 # FRONTEND_LOGO = 'img/django-fast-frontend-logo-text.PNG'
+# FRONTEND_DESCRIPTION = ""
 FRONTEND_AUTO_URL = False
 FRONTEND_URL = ''
 FRONTEND_AUTHENTICATION = False

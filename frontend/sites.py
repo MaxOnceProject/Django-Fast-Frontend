@@ -5,14 +5,10 @@ from django.conf import settings
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import render, redirect
-
 from frontend.forms import generate_form_for_model
 
+
 class FrontendSiteAbstract(ABC):
-    pass
-
-
-class FrontendSite:
     def __init__(self, name="frontend"):
         """
         Initializes a new FrontendSite instance.
@@ -24,6 +20,15 @@ class FrontendSite:
         self.navbar_registry = None
         self.cards = None
 
+    @property
+    def urls(self):
+        """
+        Returns the urlpatterns and the frontend site namespace.
+        """
+
+        from .urls import urlpatterns
+        return urlpatterns, "", self.name
+
     def register(self, model, frontend_class=None):
         """
         Registers a model with the frontend site using the given frontend class.
@@ -32,24 +37,6 @@ class FrontendSite:
         if frontend_class is None:
             AttributeError('Please specify a frontend class')
         self._registry[model] = frontend_class()
-
-    def register_config(self, config_class=None):
-        """
-        Registers a global frontend configuration class.
-        """
-
-        if config_class is None:
-            raise AttributeError('Please specify a configuration class')
-        self.register(model='config', frontend_class=config_class)
-
-    def register_accounts(self, account_class=None):
-        """
-        Registers an accounts frontend configuration class.
-        """
-
-        if account_class is None:
-            account_class = AccountFrontend
-        self.register(model='accounts', frontend_class=account_class)
 
     def unregister(self, model):
         """
@@ -71,6 +58,27 @@ class FrontendSite:
                         self.register(value.model, value.__class__)
             except ImportError:
                 continue
+
+
+class FrontendSite(FrontendSiteAbstract):
+
+    def register_config(self, config_class=None):
+        """
+        Registers a global frontend configuration class.
+        """
+
+        if config_class is None:
+            raise AttributeError('Please specify a configuration class')
+        self.register(model='config', frontend_class=config_class)
+
+    def register_accounts(self, account_class=None):
+        """
+        Registers an accounts frontend configuration class.
+        """
+
+        if account_class is None:
+            account_class = AccountFrontend
+        self.register(model='accounts', frontend_class=account_class)
 
     def load_global_config(self):
         """
@@ -128,15 +136,6 @@ class FrontendSite:
         """
 
         return {app_name: register[app_name]}
-
-    @property
-    def urls(self):
-        """
-        Returns the urlpatterns and the frontend site namespace.
-        """
-
-        from .urls import urlpatterns
-        return urlpatterns, "", self.name
 
     def http_response(self, request, context=None, template=None):
         """
@@ -276,6 +275,7 @@ class FrontendSite:
             filter_options[field] = filter_field.choices if hasattr(filter_field, 'choices') and filter_field.choices else model.objects.values_list(field, flat=True).distinct()
         return filter_options
 
+
 if getattr(settings, 'FRONTEND_SITE_CLASS', None):
     site = getattr(settings, 'FRONTEND_SITE_CLASS')()
 else:
@@ -289,7 +289,21 @@ class ModelFrontend:
     :param model: The Django model to configure frontend settings for
     """
 
-    pass
+    login_required = True
+    list_display = tuple()
+    table_inline_button = tuple()
+    cards = False
+    search_fields = tuple()
+    readonly_fields = tuple()
+    show_permission = True
+    change_permission = False
+    delete_permission = False
+    add_permission = False
+    list_per_page = 100
+    toolbar_button = tuple()
+    description = str()
+    list_filter = tuple()  # List of fields available for filtering
+    sortable_by = tuple()  # List of fields available for sorting
 
 
 class Config:
@@ -301,6 +315,8 @@ class Config:
     brand = str()
     logo = str()
     css = str()
+    description = str()
+
 
 class AccountFrontend:
     """

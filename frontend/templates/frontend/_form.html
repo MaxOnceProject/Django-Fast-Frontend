@@ -24,11 +24,13 @@
             </div>
         {% endfor %}
     {% endif %}
-    <div class="ms-auto p-1">
-        <form method="post" class="needs-validation" action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_delete" id=segments.4 %}">
-            {% csrf_token %}
-            {% bootstrap_button button_class="btn-danger" button_type="submit" content="Delete" %}
-        </form>
-    </div>
+    {% if option.table.delete %}
+        <div class="ms-auto p-1">
+            <form method="post" class="needs-validation" action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_delete" id=segments.4 %}">
+                {% csrf_token %}
+                {% bootstrap_button button_class="btn-danger" button_type="submit" content="Delete" %}
+            </form>
+        </div>
+    {% endif %}
 {% endif %}
 </div>

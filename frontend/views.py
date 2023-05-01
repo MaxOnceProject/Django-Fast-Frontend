@@ -125,9 +125,10 @@ class FrontendModelView(TemplateView):
                     "table": {
                         "toolbar_button": getattr(model_config, 'toolbar_button', False),
                         "cards": getattr(model_config, 'cards', False),
-                        "show": getattr(model_config, 'table_show', True),
+                        "show": getattr(model_config, 'show_permission', True),
                         "add": getattr(model_config, 'add_permission', False),
                         "change": getattr(model_config, 'change_permission', False),
+                        "delete": getattr(model_config, 'delete_permission', False),
                         "search": getattr(model_config, 'search_fields', False),
                         "filter_sort": getattr(model_config, 'list_filter', False) or getattr(model_config, 'sortable_by', False),
                         "inline_button": getattr(model_config, 'table_inline_button', False),

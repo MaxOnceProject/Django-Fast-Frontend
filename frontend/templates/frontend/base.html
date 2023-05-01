@@ -5,7 +5,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>{% block title %}{{ meta.title }}{% endblock %}</title>
+    <title>{% block title %}{{ meta.brand }}{% endblock %}</title>
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,10 +14,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="all,follow">
     <meta property="og:site_name" content="Blogbeat" />
-    <meta property="og:title" content="{{ meta.title }}" />
+    <meta property="og:title" content="{{ meta.brand }}" />
     <meta property="og:description" content="{{ meta.description }}" />
-    <meta property="og:image" content="{{ meta.image }}" />
-    <meta property="og:url" content="{{ meta.url }}" />
+    <meta property="og:image" content="{{ meta.logo }}" />
+    <meta property="og:url" content="{% url 'frontend' %}" />
     <meta property="og:type" content="{{ meta.type|default_if_none:"website" }}" />
 
     <link rel="shortcut icon" href="{% static 'img/blogbeat-logo.png' %}">

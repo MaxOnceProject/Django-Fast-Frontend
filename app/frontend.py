@@ -14,24 +14,22 @@ class AuthorFrontend(frontend.ModelFrontend):
     login_required = False
     list_display = ('name', 'title')
     table_inline_button = ('check', 'uncheck')
-    table_add = False
-    table_show = True
-    cards = False
+    show_permission = False
+    cards = True
     # list_filter = ('name', 'title')
     search_fields = ('name', 'title', 'birth_date')
-    readonly_fields = ('name', 'title')
-    change_permission = True
-    delete_permission = True
+    # readonly_fields = ('name', 'title')
+    # change_permission = True
+    # delete_permission = True
     add_permission = True
-    list_per_page = 100
-    toolbar_button = ('everything', 'everything_everything')
-    description = f"everything_everything everything_everything everything_everything " \
-                   f"everything_everything everything_everything everything_everything " \
-                   f"everything_everything everything_everything everything_everything " \
-                   f"everything_everything everything_everything everything_everything"
-    list_filter = ('name', 'title', 'birth_date')  # List of fields available for filtering
-    sortable_by = ('name', 'title')  # List of fields available for sorting
-    # show_permission = True
+    list_per_page = 5
+    # toolbar_button = ('everything', 'everything_everything')
+    # description = f"everything_everything everything_everything everything_everything " \
+    #                f"everything_everything everything_everything everything_everything " \
+    #                f"everything_everything everything_everything everything_everything " \
+    #                f"everything_everything everything_everything everything_everything"
+    # list_filter = ('name', 'title', 'birth_date')  # List of fields available for filtering
+    # sortable_by = ('name', 'title')  # List of fields available for sorting
 
     def everything(self):
         print(self)
