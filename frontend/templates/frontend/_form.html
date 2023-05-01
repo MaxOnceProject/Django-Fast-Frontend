@@ -1,16 +1,34 @@
 <!-- frontend_admin/templates/frontend_admin/admin.html -->
 {% load django_bootstrap5 %}
+{% load django_fast_frontend %}
+
 
 <form method="post" class="needs-validation">
     {% csrf_token %}
     {% bootstrap_form table.form %}
-    <div class="col d-flex justify-content-between">
-        {% bootstrap_button button_type="submit" content="Save" %}
+    <div class="col d-flex justify-content">
+        <div class="p-1">
+            {% bootstrap_button button_type="submit" content="Save" %}
+        </div>
 </form>
 {% if segments.4 %}
-    <form method="post" class="needs-validation" action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_delete" id=segments.4 %}">
-        {% csrf_token %}
-        {% bootstrap_button button_class="btn-danger" button_type="submit" content="Delete" %}
-    </form>
+    {% if option.table.inline_button %}
+        {% for inline_button in table.inline_button %}
+            <div class="p-1">
+                <form method="post" class="needs-validation" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=inline_button id=segments.4 %}">
+                    {% csrf_token %}
+                    {% with inline_button|label as inline_button_label %}
+                        {% bootstrap_button button_type="submit" button_class="btn-outline-primary" content=inline_button_label %}
+                    {% endwith %}
+                </form>
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div class="ms-auto p-1">
+        <form method="post" class="needs-validation" action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_delete" id=segments.4 %}">
+            {% csrf_token %}
+            {% bootstrap_button button_class="btn-danger" button_type="submit" content="Delete" %}
+        </form>
+    </div>
 {% endif %}
 </div>
