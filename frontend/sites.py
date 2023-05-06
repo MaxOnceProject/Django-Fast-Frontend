@@ -59,45 +59,18 @@ class FrontendSiteAbstract(ABC):
             except ImportError:
                 continue
 
-
-class FrontendSite(FrontendSiteAbstract):
-
-    def register_config(self, config_class=None):
+    def get_global_config(self):
         """
-        Registers a global frontend configuration class.
-        """
-
-        if config_class is None:
-            raise AttributeError('Please specify a configuration class')
-        self.register(model='config', frontend_class=config_class)
-
-    def register_accounts(self, account_class=None):
-        """
-        Registers an accounts frontend configuration class.
-        """
-
-        if account_class is None:
-            account_class = AccountFrontend
-        self.register(model='accounts', frontend_class=account_class)
-
-    def load_global_config(self):
-        """
-        Loads the global frontend configuration.
+        gets the global frontend configuration.
         """
 
         self.global_config = self._registry['config'].__class__
         return  self.global_config
 
-    def load_model_config(self, model):
-        """
-        Loads the frontend configuration for the given model.
-        """
 
-        return site._registry[model].__class__
-
-    def load_navbar_registry(self):
+    def get_navbar_registry(self):
         """
-        Loads the navbar registry with models from the registered frontend classes.
+        gets the navbar registry with models from the registered frontend classes.
         """
 
         self.navbar_registry = {}
@@ -130,12 +103,6 @@ class FrontendSite(FrontendSiteAbstract):
                                             'description': model_description}]
         return self.navbar_registry
 
-    def load_navbar_registry_by_app(self, register, app_name):
-        """
-        Loads the navbar registry filtered by the given app name.
-        """
-
-        return {app_name: register[app_name]}
 
     def http_response(self, request, context=None, template=None):
         """
@@ -143,10 +110,10 @@ class FrontendSite(FrontendSiteAbstract):
         """
 
         if not self.global_config:
-            self.load_global_config()
+            self.get_global_config()
 
         if not self.navbar_registry:
-            self.load_navbar_registry()
+            self.get_navbar_registry()
 
         if not 'meta' in context:
             context['meta'] = {}
@@ -159,6 +126,42 @@ class FrontendSite(FrontendSiteAbstract):
         if not 'logo' in context['meta']:
             context['meta']['logo'] = getattr(self.global_config, 'logo', 'img/django-fast-frontend-logo.png')
         return render(request, template, context)
+
+
+
+class FrontendSite(FrontendSiteAbstract):
+
+    def register_config(self, config_class=None):
+        """
+        Registers a global frontend configuration class.
+        """
+
+        if config_class is None:
+            raise AttributeError('Please specify a configuration class')
+        self.register(model='config', frontend_class=config_class)
+
+    def register_accounts(self, account_class=None):
+        """
+        Registers an accounts frontend configuration class.
+        """
+
+        if account_class is None:
+            account_class = AccountFrontend
+        self.register(model='accounts', frontend_class=account_class)
+
+    def get_model_config(self, model):
+        """
+        gets the frontend configuration for the given model.
+        """
+
+        return site._registry[model].__class__()
+
+    def get_navbar_registry_by_app(self, register, app_name):
+        """
+        gets the navbar registry filtered by the given app name.
+        """
+
+        return {app_name: register[app_name]}
 
     def http_home_response(self, request, context):
         """
@@ -181,13 +184,13 @@ class FrontendSite(FrontendSiteAbstract):
 
         return redirect(f"{settings.LOGIN_URL}?next={request.path}")
 
-    def load_cards(self):
+    def get_cards(self):
         """
         Redirects the user to the login page with the current path as the next URL.
         """
 
         if not self.navbar_registry:
-            self.load_navbar_registry()
+            self.get_navbar_registry()
         if getattr(self.global_config, 'authentication', False):
             self.cards = self.navbar_registry.copy()
             del self.cards['accounts']
@@ -195,23 +198,213 @@ class FrontendSite(FrontendSiteAbstract):
             self.cards = self.navbar_registry
         return self.cards
 
-    def generate_form_for_model(self, model, fields):
+
+if getattr(settings, 'FRONTEND_SITE_CLASS', None):
+    site = getattr(settings, 'FRONTEND_SITE_CLASS')()
+else:
+    site = FrontendSite()
+
+
+class ModelFrontend:
+    """
+    A class representing a frontend configuration for a Django model.
+
+    :param model: The Django model to configure frontend settings for
+    """
+
+    # login
+    login_required = True
+
+    # toolbar
+    toolbar_button = tuple()
+    description = str()
+
+    # table
+    list_display = tuple()
+    cards = False
+    list_per_page = 100
+    view_permission = True
+    table_inline_button = tuple()
+
+    # table search, sort and filter
+    search_fields = tuple()
+    sortable_by = tuple()  # List of fields available for sorting
+    list_filter = tuple()  # List of fields available for filtering
+
+    # form
+    fields = list_display  # follows list_display by default
+    readonly_fields = tuple()
+    change_permission = False
+    delete_permission = False
+    add_permission = False
+
+    @property
+    def actions(self):
+        raise NotImplementedError('Use option table_inline_button or toolbar_button.')
+
+    @property
+    def actions_on_top(self):
+        return NotImplementedError('Use option table_inline_button or toolbar_button.')
+
+    @property
+    def actions_on_bottom(self):
+        return NotImplementedError('Use option table_inline_button or toolbar_button.')
+
+    @property
+    def empty_value_display(self):
+        raise NotImplementedError
+
+    @property
+    def ordering(self):
+        raise NotImplementedError('Use option sortable_by.')
+
+    @property
+    def preserve_filters(self):
+        raise NotImplementedError
+
+    @property
+    def search_help_text(self):
+        raise NotImplementedError
+
+    @property
+    def show_full_result_count(self):
+        raise NotImplementedError
+
+    @property
+    def form(self):
+        raise NotImplementedError
+
+    @property
+    def autocomplete_fields(self):
+        raise NotImplementedError
+
+    @property
+    def list_select_related(self):
+        raise NotImplementedError
+
+    @property
+    def formfield_overrides(self):
+        raise NotImplementedError
+
+    @property
+    def delete_selected_confirmation_template(self):
+        raise NotImplementedError
+
+    @property
+    def delete_confirmation_template(self):
+        raise NotImplementedError
+
+    @property
+    def change_list_template(self):
+        raise NotImplementedError
+
+    @property
+    def change_form_template(self):
+        raise NotImplementedError
+
+    @property
+    def add_form_template(self):
+        raise NotImplementedError
+
+    @property
+    def actions_selection_counter(self):
+        raise NotImplementedError
+
+    @property
+    def date_hierarchy(self):
+        raise NotImplementedError('Use option search_fields.')
+
+    @property
+    def exclude(self):
+        raise NotImplementedError('Use option fields to specify fields to display in form.')
+
+    @property
+    def fieldsets(self):
+        raise NotImplementedError('Used in Django to cover complex edge case functionality.')
+
+    @property
+    def filter_horizontal(self):
+        raise NotImplementedError('Use option search_fields.')
+
+    @property
+    def filter_vertical(self):
+        raise NotImplementedError('Use option search_fields.')
+
+    @property
+    def inlines(self):
+        raise NotImplementedError('Adding more Information to the Page will bloat the frontend.')
+
+    @property
+    def list_display_links(self):
+        raise NotImplementedError('An Edit Button will be in place if editing the table row is allowed.')
+
+    @property
+    def list_editable(self):
+        raise NotImplementedError('Use option readonly_fields.')
+
+    @property
+    def paginator(self):
+        raise NotImplementedError('Used in Django to cover edge cases.')
+
+    @property
+    def prepopulated_fields(self):
+        raise NotImplementedError('Use a custom frontend page and use java script or add a custom model form.')
+
+    @property
+    def radio_fields(self):
+        raise NotImplementedError('Use a custom model form.')
+
+    @property
+    def raw_id_fields(self):
+        raise NotImplementedError
+
+    @property
+    def save_as(self):
+        raise NotImplementedError
+
+    @property
+    def save_as_continue(self):
+        raise NotImplementedError
+
+    @property
+    def save_on_top(self):
+        raise NotImplementedError
+
+    @property
+    def view_on_site(self):
+        raise NotImplementedError
+
+    def get_readonly_fields(self):
+        return self.readonly_fields
+
+    def get_list_display(self):
+        return self.list_display
+
+    def get_fields(self):
+        return self.fields
+
+    def has_view_permission(self):
+        return self.view_permission
+
+    def has_add_permission(self):
+        return self.add_permission
+
+    def has_change_permission(self):
+        return self.change_permission
+
+    def has_delete_permission(self):
+        return self.delete_permission
+
+    def get_form(self, model, fields):
         """
         Redirects the user to the login page with the current path as the next URL.
         """
 
         return generate_form_for_model(model, fields)
 
-    def load_model_fields(self, model_config):
+    def get_model_objects(self, model, fields):
         """
-        Redirects the user to the login page with the current path as the next URL.
-        """
-
-        return list(getattr(model_config, 'list_display', []))
-
-    def load_model_objects(self, model, fields):
-        """
-        Loads objects of a model with the specified fields.
+        gets objects of a model with the specified fields.
         """
 
         if 'id' in fields:
@@ -224,25 +417,25 @@ class FrontendSite(FrontendSiteAbstract):
                 fields = [field.name for field in model._meta.fields if field.name != 'id']
         else:
             objects = model.objects.values(*fields, 'id')
-        return objects, fields
+        return objects, list(fields)
 
-    def load_pagination(self, request, objects, list_per_page):
+    def get_pagination(self, request, objects, list_per_page):
         """
-        Loads a paginator for the objects and returns the paginated objects.
+        gets a paginator for the objects and returns the paginated objects.
         """
 
         paginator = Paginator(objects, list_per_page)  # Show x items per page
         objects = paginator.get_page(request.GET.get("page"))
         return objects
 
-    def load_model_actions(self, table_inline_button):
+    def get_model_actions(self, table_inline_button):
         table_fields = []
         if table_inline_button:
             for action in table_inline_button:
                 table_fields += [action]
-        return table_fields
+        return list(table_fields)
 
-    def load_model_filter(self, objects, search_fields, search_query, filter_fields, filter_args, sort_fields, sort_args):
+    def get_model_filter(self, objects, search_fields, search_query, filter_fields, filter_args, sort_fields, sort_args):
         # Apply search filters
         if search_fields and search_query:
             query = Q()
@@ -275,35 +468,8 @@ class FrontendSite(FrontendSiteAbstract):
             filter_options[field] = filter_field.choices if hasattr(filter_field, 'choices') and filter_field.choices else model.objects.values_list(field, flat=True).distinct()
         return filter_options
 
-
-if getattr(settings, 'FRONTEND_SITE_CLASS', None):
-    site = getattr(settings, 'FRONTEND_SITE_CLASS')()
-else:
-    site = FrontendSite()
-
-
-class ModelFrontend:
-    """
-    A class representing a frontend configuration for a Django model.
-
-    :param model: The Django model to configure frontend settings for
-    """
-
-    login_required = True
-    list_display = tuple()
-    table_inline_button = tuple()
-    cards = False
-    search_fields = tuple()
-    readonly_fields = tuple()
-    show_permission = True
-    change_permission = False
-    delete_permission = False
-    add_permission = False
-    list_per_page = 100
-    toolbar_button = tuple()
-    description = str()
-    list_filter = tuple()  # List of fields available for filtering
-    sortable_by = tuple()  # List of fields available for sorting
+    def get_autocomplete_fields(self):
+        raise NotImplementedError
 
 
 class Config:

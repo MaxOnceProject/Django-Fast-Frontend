@@ -14,17 +14,17 @@ class AuthorFrontend(frontend.ModelFrontend):
     login_required = False
     list_display = ('name', 'title')
     table_inline_button = ('check', 'uncheck')
-    show_permission = False
-    cards = True
+    # view_permission = False
+    # cards = True
     # list_filter = ('name', 'title')
     search_fields = ('name', 'title', 'birth_date')
     # readonly_fields = ('name', 'title')
-    # change_permission = True
+    change_permission = True
     # delete_permission = True
     add_permission = True
     list_per_page = 5
-    # toolbar_button = ('everything', 'everything_everything')
-    # description = f"everything_everything everything_everything everything_everything " \
+    toolbar_button = ('everything', 'everything_everything')
+    description = f"everything_everything everything_everything everything_everything "
     #                f"everything_everything everything_everything everything_everything " \
     #                f"everything_everything everything_everything everything_everything " \
     #                f"everything_everything everything_everything everything_everything"

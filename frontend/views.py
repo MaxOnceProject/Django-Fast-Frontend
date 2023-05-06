@@ -31,20 +31,20 @@ class FrontendModelView(TemplateView):
         creating, updating, and deleting model instances. This view also handles pagination and searching.
         """
 
-        # load global site config
-        global_config = site.load_global_config()
+        # get global site config
+        global_config = site.get_global_config()
         global_authentication = getattr(global_config, 'authentication', True)
 
         # if global authentication is active this validates that the user is authenticated
         if global_authentication and not request.user.is_authenticated:
             return site.http_login_redirect(request)
 
-        # pre-load navbar
-        navbar_registry = site.load_navbar_registry()
+        # pre-get navbar
+        navbar_registry = site.get_navbar_registry()
 
         # landing page for website
         if app_name is None:
-            cards = site.load_cards()
+            cards = site.get_cards()
             return site.http_home_response(
                 request,
                 context={
@@ -60,24 +60,24 @@ class FrontendModelView(TemplateView):
                 request,
                 context={
                     "meta": {
-                        "cards": site.load_navbar_registry_by_app(navbar_registry, app_name),
+                        "cards": site.get_navbar_registry_by_app(navbar_registry, app_name),
                         "title": "Home",
                     },
                 })
 
-        # load model site config
+        # get model site config
         model = apps.get_model(app_name, model_name)
-        model_config = site.load_model_config(model)
+        model_config = site.get_model_config(model)
         model_authentication = getattr(model_config, 'login_required', True)
 
         # if model authentication is active this validates that the user is authenticated
         if model_authentication and not request.user.is_authenticated:
             return redirect(f"{settings.LOGIN_URL}?next={request.path}")
 
-        fields = site.load_model_fields(model_config)
+        fields = model_config.get_fields()
 
         # create model forms
-        form_class = site.generate_form_for_model(model, fields)
+        form_class = model_config.get_form(model, fields)
         form = form_class()
 
         if action in ['table_add', 'table_change', 'table_delete']:
@@ -85,18 +85,19 @@ class FrontendModelView(TemplateView):
             if id and action in ['table_change'] and model_config.change_permission:
                 object = model.objects.get(id=id)
                 form = form_class(request.POST or None, initial=object.__dict__)
-                if model_config.readonly_fields:
-                    for readonly_fields in model_config.readonly_fields:
+                if model_config.get_readonly_fields():
+                    for readonly_fields in model_config.get_readonly_fields():
                         form.fields[readonly_fields].widget.attrs['readonly'] = True
 
+        list_display = model_config.get_list_display()
         # initiate data object
-        objects, table_fields = site.load_model_objects(model, fields)
+        objects, table_fields = model_config.get_model_objects(model, list_display)
 
         # get search, filter and sort
         search_fields = getattr(model_config, 'search_fields', None)
         list_filter = getattr(model_config, 'list_filter', [])
         sortable_by = getattr(model_config, 'sortable_by', [])
-        list_filter_options = site.get_filter_options(model, list_filter)
+        list_filter_options = model_config.get_filter_options(model, list_filter)
 
         search_query = request.GET.get("q", "")
         sort_args = request.GET.get("s", "")
@@ -105,14 +106,14 @@ class FrontendModelView(TemplateView):
         filter_args = {filter: request_dict[filter] for filter in request_dict if filter not in ['q', 's'] and request.GET[filter] != ''}
 
         # Apply search, filter and sort
-        objects = site.load_model_filter(objects, search_fields, search_query, list_filter, filter_args, sortable_by, sort_args)
+        objects = model_config.get_model_filter(objects, search_fields, search_query, list_filter, filter_args, sortable_by, sort_args)
 
         # Pagination
         list_per_page = getattr(model_config, 'list_per_page', 100)
-        objects = site.load_pagination(request, objects, list_per_page)
+        objects = model_config.get_pagination(request, objects, list_per_page)
 
         table_inline_button = getattr(model_config, 'table_inline_button', [])
-        table_fields += site.load_model_actions(table_inline_button)
+        table_fields += model_config.get_model_actions(table_inline_button)
 
         return site.http_model_response(
             request,
@@ -125,10 +126,10 @@ class FrontendModelView(TemplateView):
                     "table": {
                         "toolbar_button": getattr(model_config, 'toolbar_button', False),
                         "cards": getattr(model_config, 'cards', False),
-                        "show": getattr(model_config, 'show_permission', True),
-                        "add": getattr(model_config, 'add_permission', False),
-                        "change": getattr(model_config, 'change_permission', False),
-                        "delete": getattr(model_config, 'delete_permission', False),
+                        "show": model_config.has_view_permission(),
+                        "add": model_config.has_add_permission(),
+                        "change": model_config.has_change_permission(),
+                        "delete": model_config.has_delete_permission(),
                         "search": getattr(model_config, 'search_fields', False),
                         "filter_sort": getattr(model_config, 'list_filter', False) or getattr(model_config, 'sortable_by', False),
                         "inline_button": getattr(model_config, 'table_inline_button', False),
@@ -167,27 +168,27 @@ class FrontendModelView(TemplateView):
         :return: A HttpResponse object with the appropriate response for the request
         """
 
-        # load global site config
-        global_config = site.load_global_config()
+        # get global site config
+        global_config = site.get_global_config()
         global_authentication = getattr(global_config, 'authentication', True)
 
         # if global authentication is active this validates that the user is authenticated
         if global_authentication and not request.user.is_authenticated:
             return site.http_login_redirect(request)
 
-        # load model site config
+        # get model site config
         model = apps.get_model(app_name, model_name)
-        model_config = site.load_model_config(model)
+        model_config = site.get_model_config(model)
         model_authentication = getattr(model_config, 'login_required', True)
 
         # if model authentication is active this validates that the user is authenticated
         if model_authentication and not request.user.is_authenticated:
             return redirect(f"{settings.LOGIN_URL}?next={request.path}")
 
-        fields = site.load_model_fields(model_config)
+        fields = model_config.get_fields()
 
         # create model forms
-        form_class = site.generate_form_for_model(model, fields)
+        form_class = model_config.get_form(model, fields)
 
         if action == 'table_change' and model_config.change_permission:
             object = model.objects.get(id=id)
@@ -208,12 +209,12 @@ class FrontendModelView(TemplateView):
             return HttpResponseRedirect(f"/{app_name}/{model_name}")
 
         if action in getattr(model_config, 'toolbar_button'):
-            getattr(model_config(), action)()
+            getattr(model_config, action)()
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
         if action in getattr(model_config, 'table_inline_button'):
             object = model.objects.get(id=id)
-            getattr(model_config(), action)(object)
+            getattr(model_config, action)(object)
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
@@ -231,7 +232,7 @@ class FrontendAbstractView(TemplateView):
 
         context = super().get_context_data()
         context['meta'] = {
-            "navbar": site.load_navbar_registry(),
+            "navbar": site.get_navbar_registry(),
             "title": self.title,
             "css": getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css'),
         }
