@@ -43,7 +43,4 @@ class AuthorFrontend(frontend.ModelFrontend):
     def uncheck(self, object):
         print(object.title)
 
-    def queryset(self):
-        pass
-
 frontend.site.register(Author, AuthorFrontend)

@@ -68,7 +68,7 @@ class FrontendModelView(TemplateView):
         # get model site config
         model = apps.get_model(app_name, model_name)
         model_config = site.get_model_config(model)
-        model_authentication = getattr(model_config, 'login_required', True)
+        model_authentication = model_config.get_login_required()
 
         # if model authentication is active this validates that the user is authenticated
         if model_authentication and not request.user.is_authenticated:
@@ -77,27 +77,27 @@ class FrontendModelView(TemplateView):
         fields = model_config.get_fields()
 
         # create model forms
-        form_class = model_config.get_form(model, fields)
+        form_class = model_config.get_form()
         form = form_class()
 
         if action in ['table_add', 'table_change', 'table_delete']:
 
-            if id and action in ['table_change'] and model_config.change_permission:
+            if id and action in ['table_change'] and model_config.has_change_permission():
                 object = model.objects.get(id=id)
                 form = form_class(request.POST or None, initial=object.__dict__)
                 if model_config.get_readonly_fields():
-                    for readonly_fields in model_config.get_readonly_fields():
-                        form.fields[readonly_fields].widget.attrs['readonly'] = True
+                    for readonly_field in model_config.get_readonly_fields():
+                        form.fields[readonly_field].widget.attrs['readonly'] = True
 
         list_display = model_config.get_list_display()
         # initiate data object
-        objects, table_fields = model_config.get_model_objects(model, list_display)
+        objects, table_fields = model_config.queryset()
 
         # get search, filter and sort
-        search_fields = getattr(model_config, 'search_fields', None)
-        list_filter = getattr(model_config, 'list_filter', [])
-        sortable_by = getattr(model_config, 'sortable_by', [])
-        list_filter_options = model_config.get_filter_options(model, list_filter)
+        search_fields = model_config.get_search_fields()
+        list_filter = model_config.get_list_filter()
+        sortable_by = model_config.get_sortable_by()
+        list_filter_options = model_config.get_filter_options()
 
         search_query = request.GET.get("q", "")
         sort_args = request.GET.get("s", "")
@@ -109,8 +109,8 @@ class FrontendModelView(TemplateView):
         objects = model_config.get_model_filter(objects, search_fields, search_query, list_filter, filter_args, sortable_by, sort_args)
 
         # Pagination
-        list_per_page = getattr(model_config, 'list_per_page', 100)
-        objects = model_config.get_pagination(request, objects, list_per_page)
+        list_per_page = model_config.get_list_per_page()
+        objects = model_config.get_pagination(request, objects)
 
         table_inline_button = getattr(model_config, 'table_inline_button', [])
         table_fields += model_config.get_model_actions(table_inline_button)
@@ -130,8 +130,9 @@ class FrontendModelView(TemplateView):
                         "add": model_config.has_add_permission(),
                         "change": model_config.has_change_permission(),
                         "delete": model_config.has_delete_permission(),
-                        "search": getattr(model_config, 'search_fields', False),
-                        "filter_sort": getattr(model_config, 'list_filter', False) or getattr(model_config, 'sortable_by', False),
+                        "search": model_config.get_search_fields(),
+                        "filter": model_config.get_list_filter(),
+                        "sort": model_config.get_sortable_by(),
                         "inline_button": getattr(model_config, 'table_inline_button', False),
                     },
                 },
@@ -188,7 +189,7 @@ class FrontendModelView(TemplateView):
         fields = model_config.get_fields()
 
         # create model forms
-        form_class = model_config.get_form(model, fields)
+        form_class = model_config.get_form()
 
         if action == 'table_change' and model_config.change_permission:
             object = model.objects.get(id=id)
