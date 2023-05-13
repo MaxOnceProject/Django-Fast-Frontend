@@ -5,3 +5,4 @@ from .sites import  site, \
                     AccountFrontend
 
 from .accounts import site as accounts
+from .sites.decorators import register

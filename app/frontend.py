@@ -1,6 +1,7 @@
 import frontend
 from app.models import Author
 
+@frontend.register(Author)
 class AuthorFrontend(frontend.ModelFrontend):
     fields = ('name', 'title')
     login_required = False
@@ -30,5 +31,3 @@ class AuthorFrontend(frontend.ModelFrontend):
 
     def uncheck(self, object):
         print(object.title)
-
-frontend.site.register(Author, AuthorFrontend)
