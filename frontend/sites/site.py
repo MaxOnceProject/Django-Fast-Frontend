@@ -20,7 +20,7 @@ class FrontendSite(FrontendSiteAbstract):
         """
 
         if account_class is None:
-            account_class = AccountFrontend
+            raise AttributeError('Please specify an account class')
         self.register(model='accounts', frontend_class=account_class)
 
     def get_model_config(self, model):

@@ -74,8 +74,6 @@ class FrontendModelView(TemplateView):
         if model_authentication and not request.user.is_authenticated:
             return redirect(f"{settings.LOGIN_URL}?next={request.path}")
 
-        fields = model_config.get_fields()
-
         # create model forms
         form_class = model_config.get_form()
         form = form_class()
@@ -101,19 +99,19 @@ class FrontendModelView(TemplateView):
 
         search_query = request.GET.get("q", "")
         sort_args = request.GET.get("s", "")
-        request_dict = dict(request.GET)
+        filter_args = model_config.get_filter_args(request.GET)
 
-        filter_args = {filter: request_dict[filter] for filter in request_dict if filter not in ['q', 's'] and request.GET[filter] != ''}
 
         # Apply search, filter and sort
-        objects = model_config.get_model_filter(objects, search_fields, search_query, list_filter, filter_args, sortable_by, sort_args)
+        objects = model_config.get_search_results(objects, search_fields, search_query)
+        objects = model_config.get_filter_results(objects, list_filter, filter_args)
+        objects = model_config.get_sort_results(objects, sortable_by, sort_args)
 
         # Pagination
-        list_per_page = model_config.get_list_per_page()
         objects = model_config.get_pagination(request, objects)
 
-        table_inline_button = getattr(model_config, 'table_inline_button', [])
-        table_fields += model_config.get_model_actions(table_inline_button)
+        inline_button = model_config.get_inline_button()
+        table_fields += model_config.get_model_actions(inline_button)
 
         return site.http_model_response(
             request,
@@ -124,8 +122,8 @@ class FrontendModelView(TemplateView):
                         "description": getattr(model_config, 'description', False),
                     },
                     "table": {
-                        "toolbar_button": getattr(model_config, 'toolbar_button', False),
-                        "cards": getattr(model_config, 'cards', False),
+                        "toolbar_button": model_config.get_toolbar_button(),
+                        "cards": model_config.get_cards(),
                         "show": model_config.has_view_permission(),
                         "add": model_config.has_add_permission(),
                         "change": model_config.has_change_permission(),
@@ -133,7 +131,7 @@ class FrontendModelView(TemplateView):
                         "search": model_config.get_search_fields(),
                         "filter": model_config.get_list_filter(),
                         "sort": model_config.get_sortable_by(),
-                        "inline_button": getattr(model_config, 'table_inline_button', False),
+                        "inline_button": model_config.get_inline_button(),
                     },
                 },
                 "site": {
@@ -145,8 +143,8 @@ class FrontendModelView(TemplateView):
                     "form": form or None,
                     "objects": objects,
                     "fields": table_fields,
-                    "inline_button": table_inline_button,
-                    "toolbar_button": getattr(model_config, 'toolbar_button', None),
+                    "inline_button": inline_button,
+                    "toolbar_button": model_config.get_toolbar_button(),
                     "search_query": search_query,
                     "filter_fields": list_filter,
                     "list_filter_options": list_filter_options,
@@ -213,7 +211,7 @@ class FrontendModelView(TemplateView):
             getattr(model_config, action)()
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-        if action in getattr(model_config, 'table_inline_button'):
+        if action in getattr(model_config, 'inline_button'):
             object = model.objects.get(id=id)
             getattr(model_config, action)(object)
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'))

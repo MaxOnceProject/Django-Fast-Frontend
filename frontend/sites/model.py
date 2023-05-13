@@ -24,7 +24,7 @@ class ModelFrontend(FrontendAbstract, NotImplementedMixin):
     cards = False
     list_per_page = 100
     view_permission = True
-    table_inline_button = tuple()
+    inline_button = tuple()
 
     # table search, sort and filter
     search_fields = tuple()
@@ -80,6 +80,14 @@ class ModelFrontend(FrontendAbstract, NotImplementedMixin):
     def get_login_required(self):
         return self.login_required
 
+    def get_toolbar_button(self):
+        return self.toolbar_button
+
+    def get_cards(self):
+        return self.cards
+    def get_inline_button(self):
+        return self.inline_button
+
     def get_form(self):
         """
         Redirects the user to the login page with the current path as the next URL.
@@ -120,21 +128,23 @@ class ModelFrontend(FrontendAbstract, NotImplementedMixin):
         objects = paginator.get_page(request.GET.get("page"))
         return objects
 
-    def get_model_actions(self, table_inline_button):
+    def get_model_actions(self, inline_button):
         table_fields = []
-        if table_inline_button:
-            for action in table_inline_button:
+        if inline_button:
+            for action in inline_button:
                 table_fields += [action]
         return list(table_fields)
 
-    def get_model_filter(self, objects, search_fields, search_query, filter_fields, filter_args, sort_fields, sort_args):
+    def get_search_results(self, objects, search_fields, search_query):
         # Apply search filters
         if search_fields and search_query:
             query = Q()
             for field in search_fields:
                 query |= Q(**{f"{field}__icontains": search_query})
             objects = objects.filter(query)
+        return objects
 
+    def get_filter_results(self, objects, filter_fields, filter_args):
         # Apply additional filters from filter_params
         if filter_fields and filter_args:
             query = Q()
@@ -144,7 +154,9 @@ class ModelFrontend(FrontendAbstract, NotImplementedMixin):
                     for filter_arg in filter_args[field]:
                         query |= Q(**{f"{field}__icontains": filter_arg})
             objects = objects.filter(query)
+        return objects
 
+    def get_sort_results(self, objects, sort_fields, sort_args):
         # Apply sorting from sort_params
         if sort_fields and sort_args:
             sort_fields = list(sort_fields) + [f'-{field}' for field in sort_fields]
@@ -154,11 +166,14 @@ class ModelFrontend(FrontendAbstract, NotImplementedMixin):
         return objects
 
     def get_filter_options(self):
-
         list_filter = self.get_list_filter()
-
         filter_options = {}
         for field in list_filter:
             filter_field = self.model._meta.get_field(field)
             filter_options[field] = filter_field.choices if hasattr(filter_field, 'choices') and filter_field.choices else self.model.objects.values_list(field, flat=True).distinct()
         return filter_options
+
+    def get_filter_args(self, request_get):
+        request_dict = dict(request_get)
+        filter_args = {filter: request_dict[filter] for filter in request_dict if filter not in ['q', 's'] and request_get[filter] != ''}
+        return filter_args

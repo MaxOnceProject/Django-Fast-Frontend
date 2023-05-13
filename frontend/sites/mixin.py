@@ -225,3 +225,19 @@ class NotImplementedMixin:
 
     def get_ordering(self):
         raise NotImplementedError
+
+
+# class LegacyMixin:
+#     url_for_result
+#     check_url_mapping
+#     get_queryset -> done
+#     get_changelist
+#     has_add_permission -> done
+#     render_change_form
+#     save_model
+#     get_button
+#     get_actions
+#     add_buttons
+#
+#     inlines
+#     inline_actions
