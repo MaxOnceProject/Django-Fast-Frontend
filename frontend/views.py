@@ -33,7 +33,7 @@ class FrontendModelView(TemplateView):
 
         # get global site config
         global_config = site.get_global_config()
-        global_authentication = getattr(global_config, 'authentication', True)
+        global_authentication = getattr(global_config, 'login_required') and getattr(global_config(), 'authentication', True)
 
         # if global authentication is active this validates that the user is authenticated
         if global_authentication and not request.user.is_authenticated:
@@ -68,7 +68,7 @@ class FrontendModelView(TemplateView):
         # get model site config
         model = apps.get_model(app_name, model_name)
         model_config = site.get_model_config(model)
-        model_authentication = model_config.get_login_required()
+        model_authentication = model_config.get_login_required() and getattr(global_config(), 'authentication', True)
 
         # if model authentication is active this validates that the user is authenticated
         if model_authentication and not request.user.is_authenticated:

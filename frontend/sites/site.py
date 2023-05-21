@@ -65,7 +65,7 @@ class FrontendSite(FrontendSiteAbstract):
 
         if not self.navbar_registry:
             self.get_navbar_registry()
-        if getattr(self.global_config, 'authentication', False):
+        if getattr(self.global_config(), 'authentication'):
             self.cards = self.navbar_registry.copy()
             del self.cards['accounts']
         else:
