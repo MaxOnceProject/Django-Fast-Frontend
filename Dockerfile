@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/python
-FROM python:3.10.9-bullseye
+FROM python:3.10-bullseye
 
 # This is where the project source lives
 ARG PROJECT_ROOT=/opt/project
@@ -7,7 +7,7 @@ ENV PYTHONPATH=${PROJECT_ROOT}
 
 RUN mkdir -p ${PROJECT_ROOT} \
     && pip config set global.trusted-host "pypi.org files.pythonhosted.org pypi.python.org" \
-    && pip install -U pip setuptools==65.6.3
+    && pip install -U pip setuptools==67.8.0
 
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir --prefer-binary -r /tmp/requirements.txt

@@ -237,14 +237,14 @@ class FrontendAbstractView(TemplateView):
         }
         return context
 
-class FrontendLoginView(FrontendAbstractView, auth_views.LoginView):
+class FrontendLoginView(auth_views.LoginView, FrontendAbstractView):
     """
     A frontend view for handling user login.
     """
 
     title = 'Login'
 
-class FrontendLogoutView(FrontendAbstractView, auth_views.LogoutView):
+class FrontendLogoutView(auth_views.LogoutView, FrontendAbstractView):
     """
     A frontend view for handling user logout.
     """
