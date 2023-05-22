@@ -230,11 +230,8 @@ class FrontendAbstractView(TemplateView):
         """
 
         context = super().get_context_data()
-        context['meta'] = {
-            "navbar": site.get_navbar_registry(),
-            "title": self.title,
-            "css": getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css'),
-        }
+        context = site.get_site_meta(context)
+        context['meta']['title'] = self.title
         return context
 
 class FrontendLoginView(auth_views.LoginView, FrontendAbstractView):

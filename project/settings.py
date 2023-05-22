@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'app.apps.AppConfig',
     'app2.apps.AppConfig',
     'django_bootstrap5',
-    'frontend.apps.FrontendConfig',
+    'frontend',
 ]
 
 MIDDLEWARE = [

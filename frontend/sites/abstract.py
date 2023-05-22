@@ -101,12 +101,7 @@ class FrontendSiteAbstract(ABC):
                                             'description': model_description}]
         return self.navbar_registry
 
-
-    def http_response(self, request, context=None, template=None):
-        """
-        Returns the urlpatterns and the frontend site namespace.
-        """
-
+    def get_site_meta(self, context=None):
         if not self.global_config:
             self.get_global_config()
 
@@ -123,4 +118,12 @@ class FrontendSiteAbstract(ABC):
             context['meta']['brand'] = getattr(self.global_config, 'brand', 'Django Fast Frontend')
         if not 'logo' in context['meta']:
             context['meta']['logo'] = getattr(self.global_config, 'logo', 'img/django-fast-frontend-logo.png')
+        return context
+
+    def http_response(self, request, context=None, template=None):
+        """
+        Returns the urlpatterns and the frontend site namespace.
+        """
+        context = self.get_site_meta(context)
+
         return render(request, template, context)

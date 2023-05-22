@@ -1,5 +1,5 @@
-django==4.2
-django-bootstrap5==23.1
+django==4.0
+django-bootstrap5==21.1
 
 factory-boy>=3.2.1
 pytest>=7.1.3
