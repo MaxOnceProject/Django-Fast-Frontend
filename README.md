@@ -135,7 +135,7 @@ class AuthorFrontend(frontend.ModelFrontend):
     fields = ('name', 'title')  # Fields to display
     login_required = False  # Whether login is required
     list_display = ('name', 'title')  # Fields to display in list view
-    inline_button = ('check', 'uncheck')  # Methods for inline buttons
+    inline_button = ('inline_button1', 'inline_button2')  # Methods for inline buttons
     view_permission = False  # Whether view permission is required
     cards = True  # Whether to display instances as cards
     list_filter = ('name', 'title')  # Fields for list view filter
@@ -145,21 +145,21 @@ class AuthorFrontend(frontend.ModelFrontend):
     delete_permission = True  # Whether delete permission is required
     add_permission = True  # Whether add permission is required
     list_per_page = 5  # Number of instances per page
-    toolbar_button = ('everything', 'everything_everything')  # Methods for toolbar buttons
+    toolbar_button = ('toolbar_button1', 'toolbar_button2')  # Methods for toolbar buttons
     description = "Everything about authors."  # Description for the frontend
     sortable_by = ('name', 'title')  # Fields that can be sorted
 
     # Define your custom methods here:
-    def everything(self):
+    def toolbar_button1(self):
         # Your custom code here...
 
-    def everything_everything(self):
+    def toolbar_button2(self):
         # Your custom code here...
 
-    def check(self, object):
+    def inline_button1(self, object):
         # Your custom code here...
 
-    def uncheck(self, object):
+    def inline_button2(self, object):
         # Your custom code here...
 
 # Register your model frontend:
@@ -173,78 +173,80 @@ You can customize the appearance and behavior of your model frontend by overridi
 To customize which fields are displayed in the list view, set ``list_display`` to a tuple of field names:
 
 ```python
-list_display = ('name', 'title')
+list_display = tuple()
 ```
 
 ### Field Filtering
 To add a filter sidebar that lets users filter the list view by certain fields, set ``list_filter`` to a tuple of field names:
 
 ```python
-list_filter = ('name', 'title')
+list_filter = tuple()
 ```
 
 ### Field Searching
 To enable a search box that lets users search the list view by certain fields, set ``search_fields`` to a tuple of field names:
 
 ```python
-search_fields = ('name', 'title', 'birth_date')
+search_fields = tuple()
 ```
 
 ### Field Sorting
 To enable sorting of the list view by certain fields, set ``sortable_by`` to a tuple of field names:
 
 ```python
-sortable_by = ('name', 'title')
+sortable_by = tuple()
 ```
 
 ### Pagination
 To customize the number of instances displayed per page, set ``list_per_page`` to the desired number:
 
 ```python
-list_per_page = 5
+list_per_page = 100
 ```
 
 ### Read-Only Fields
 To make certain fields read-only in the frontend, set ``readonly_fields`` to a tuple of field names:
 
 ```python
-readonly_fields = ('name', 'title')
+readonly_fields = tuple()
 ```
 
 ### Inline Buttons
 You can add custom inline buttons to your list view by defining methods for them in your ``ModelFrontend`` subclass and adding them to the ``inline_button`` attribute:
 
 ```python
-inline_button = ('check', 'uncheck')
+inline_button = ('inline_button1', 'inline_button2')
 
-def check(self, object):
+def inline_button1(self, object):
     # Your custom code here...
 
-def uncheck(self, object):
+def inline_button2(self, object):
     # Your custom code here...
 ```
+_Note: The name of a buttons follows the name of the function._
 
 ### Toolbar Buttons
 Similarly, you can add custom toolbar buttons by defining methods for them and adding them to the ``toolbar_button`` attribute:
 
 ```python
-toolbar_button = ('everything', 'everything_everything')
+toolbar_button = ('toolbar_button1', 'toolbar_button2')
 
-def everything(self):
+def toolbar_button1(self):
     # Your custom code here...
 
-def everything_everything(self):
+def toolbar_button2(self):
     # Your custom code here...
 ```
+_Note: The name of a buttons follows the name of the function._
 
 ### Permissions
 You can control permissions for viewing, adding, changing, and deleting instances by setting the ``view_permission``, ``add_permission``, ``change_permission``, and ``delete_permission`` attributes:
 
 ```python
-view_permission = False
-add_permission = True
-change_permission = True
-delete_permission = True
+view_permission = True
+change_permission = False
+delete_permission = False
+add_permission = False
 ```
 Note that these permissions are checked in addition to the standard Django model permissions.
 
@@ -252,7 +254,7 @@ Note that these permissions are checked in addition to the standard Django model
 You can add a description for your model frontend by setting the ``description`` attribute:
 
 ```python
-description = "Everything about authors."
+description = str()
 ```
 This description will be displayed in the frontend.
 
@@ -279,15 +281,14 @@ You can specify a custom brand name and logo for your Django Fast Frontend by se
 FRONTEND_BRAND = 'Fast Frontend'
 FRONTEND_LOGO = 'img/django-fast-frontend-logo-text.PNG'
 ```
-This brand name and logo will be displayed in the navbar of all Django Fast Frontend pages.
+This brand name and logo will be displayed in the navbar of all Django Fast Frontend pages.  
 
-## Frontend Description
 You can provide a description for your Django Fast Frontend by setting ``FRONTEND_DESCRIPTION`` in your Django project settings:
 
 ```python
 FRONTEND_DESCRIPTION = "This is a description for the Django Fast Frontend."
-This description will be displayed on the frontend's main page.
 ```
+This description will be displayed on the frontend's main page.
 
 ## Frontend URL
 By default, Django Fast Frontend automatically generates URLs for your model frontends based on their names. If you want to override this, you can set ``FRONTEND_URL`` in your Django project settings to your desired URL path:
@@ -297,12 +298,6 @@ FRONTEND_URL = '/your-favorite-url-path/'
 ```
 Note that this URL path should start and end with a slash.
 
-If you want to disable automatic URL generation and manually specify all your frontend URLs, you can set ``FRONTEND_AUTO_URL`` to False:
-
-```python
-FRONTEND_AUTO_URL = False
-```
-
 ## Authentication
 By default, Django Fast Frontend does not require users to be logged in to view your model frontends. If you want to require login, you can set ``FRONTEND_AUTHENTICATION`` to True in your Django project settings:
 
@@ -310,6 +305,20 @@ By default, Django Fast Frontend does not require users to be logged in to view 
 FRONTEND_AUTHENTICATION = True
 ```
 Note that this requires Django's authentication system to be properly configured.
+
+Important: To use Django Fast Frontend authentication for sites enable the frontend URLs:
+````python
+from django.urls import path
+import frontend
+
+urlpatterns = [
+    # ...
+    path('accounts/', frontend.accounts.urls),
+    path('', frontend.site.urls),
+    # ...
+]
+````
+_Note: It is possible to use a different authentication system._  
 
 In addition, you can customize the URL users are redirected to after login and logout by setting ``LOGIN_REDIRECT_URL`` and ``LOGOUT_REDIRECT_URL`` in your Django project settings:
 
@@ -331,12 +340,6 @@ Similarly, if you want to serve your Django Fast Frontend at the root URL path /
 ```python
 path('', include(frontend.site.urls)),
 ```
-Note that you also need to include Django's admin URLs if you want to use the Django admin site:
-
-```python
-path('admin/', admin.site.urls),
-```
-This concludes the documentation for Django Fast Frontend. If you have any questions, feel free to ask.
 
 ## Customizing the Model Frontend
 Django Fast Frontend provides a class-based system for customizing the frontend for each Django model. To create a frontend for a model, you need to create a subclass of ``frontend.ModelFrontend`` and register it with ``frontend.site``.
