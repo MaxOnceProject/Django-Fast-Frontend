@@ -8,7 +8,7 @@ setup(
     version="0.1.0",
     author="Blogbeat",
     author_email="support@blogbeat.app",
-    description="A fast and efficient frontend for Django projects.",
+    description="Turbocharge Front-End Creation with Django-Admin-Like Configuration",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/MaxOnceProject/Django-Fast-Frontend",
