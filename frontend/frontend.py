@@ -3,6 +3,8 @@ from django.urls import get_resolver
 import frontend
 from django.conf import settings
 from .sites import AccountFrontend
+
+
 class Frontend(frontend.Config):
     login_required = getattr(settings, 'FRONTEND_LOGIN_REQUIRED', True)
     brand = getattr(settings, 'FRONTEND_BRAND', 'Django Fast Frontend')
