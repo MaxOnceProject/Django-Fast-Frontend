@@ -5,7 +5,7 @@ with open("../README.md", "r") as fh:
 
 setup(
     name="django-fast-frontend",
-    version="0.1.0",
+    version="0.2.1",
     author="Blogbeat",
     author_email="support@blogbeat.app",
     description="A fast and efficient frontend for Django projects.",
