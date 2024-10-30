@@ -1,4 +1,5 @@
-# Django Fast Frontend
+# Django Fast Frontend 
+### *Turbocharge Front-End Creation with Django-Admin-Like Configuration*
 ## Overview
 Django Fast Frontend is a Django app that provides an efficient way to customize frontend settings for your Django models. It provides a ``ModelFrontend`` class which allows you to specify various frontend configurations for your models.  
   
