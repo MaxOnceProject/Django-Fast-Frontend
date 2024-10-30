@@ -132,7 +132,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # FRONTEND_URL = '/your-favorite-url-path/'
-# FRONTEND_CUSTOM_CSS = 'css/custom.css'
+FRONTEND_CUSTOM_CSS = 'css/custom-purple.css'
 # FRONTEND_BRAND = 'Fast Frontend'
 # FRONTEND_LOGO = 'img/django-fast-frontend-logo-text.PNG'
 # FRONTEND_DESCRIPTION = ""
