@@ -1,9 +1,43 @@
 # Django Fast Frontend 
 ### *Turbocharge Front-End Creation with Django-Admin-Like Configuration*
+
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
+![Django](https://img.shields.io/badge/django-%3E%3D4.2-green)
+![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)
+![License](https://img.shields.io/badge/license-MIT-brightgreen)
+
 ## Overview
-Django Fast Frontend is a Django app that provides an efficient way to customize frontend settings for your Django models. It provides a ``ModelFrontend`` class which allows you to specify various frontend configurations for your models.  
+Django Fast Frontend is a Django app that provides an efficient way to customize frontend settings for your Django models. It provides a ``ModelFrontend`` class which allows you to specify various frontend configurations for your models.
+
+Key highlights:
+- **Secure by default** — authentication required, explicit field declarations, safe redirects
+- **Responsive design** — optimized for desktop, tablet, and mobile devices
+- **Bootstrap 5.3** — modern UI with CDN resources protected by Subresource Integrity (SRI)
+- **Extensible** — override querysets, permissions, actions, and templates
   
 _Note: Django Fast Frontend is a complementary package to Django´s powerful MVT based frontend feature. If you require e.g. static pages for your website you can easily add them to your project using the original Django frontend feature._
+
+## What's New in v0.3.0
+
+### Security Hardening
+- **Authentication required by default** — `login_required` now defaults to `True` (was `False`)
+- **Safe redirects** — all redirects are validated against `ALLOWED_HOSTS` to prevent open-redirect attacks
+- **Explicit fields required** — forms no longer default to `fields="__all__"`. You must declare `fields` or `list_display` explicitly
+- **IDOR protection hook** — new `get_queryset(request)` method for row-level authorization
+- **Action dispatch hardening** — only registered, callable actions are executed via POST
+- **CDN integrity** — Bootstrap CSS/JS, Bootstrap Icons, and jQuery are loaded with SRI hashes
+
+### Responsive Design
+- Mobile-optimized navigation, tables, cards, toolbars, and search/filter components
+- Proper viewport meta tag and responsive breakpoints
+- Touch-friendly buttons and form controls
+
+### Infrastructure
+- Minimum Django version raised to **4.2** (LTS)
+- `django_bootstrap5>=24.3` required
+- Test app code excluded from published package
+- Environment-variable-driven settings for `SECRET_KEY`, `DEBUG`, and `ALLOWED_HOSTS`
+- Default CSS stylesheet shipped with the package
 
 ## Installation
 Install Django Fast Frontend with pip:
@@ -133,11 +167,11 @@ import frontend
 from app.models import Author
 
 class AuthorFrontend(frontend.ModelFrontend):
-    fields = ('name', 'title')  # Fields to display
-    login_required = False  # Whether login is required
+    fields = ('name', 'title')  # Fields to display (REQUIRED — no default)
+    login_required = True  # Whether login is required (default: True)
     list_display = ('name', 'title')  # Fields to display in list view
     inline_button = ('inline_button1', 'inline_button2')  # Methods for inline buttons
-    view_permission = False  # Whether view permission is required
+    view_permission = True  # Whether view permission is required (default: True)
     cards = True  # Whether to display instances as cards
     list_filter = ('name', 'title')  # Fields for list view filter
     search_fields = ('name', 'title', 'birth_date')  # Fields for search
@@ -300,10 +334,12 @@ FRONTEND_URL = '/your-favorite-url-path/'
 Note that this URL path should start and end with a slash.
 
 ## Authentication
-By default, Django Fast Frontend does not require users to be logged in to view your model frontends. If you want to require login, you can set ``FRONTEND_AUTHENTICATION`` to True in your Django project settings:
+**As of v0.3.0, Django Fast Frontend requires users to be logged in by default** (`login_required = True`). If you want to allow anonymous access to a specific model frontend, set `login_required = False` on that frontend class.
+
+You can also control global authentication by setting ``FRONTEND_AUTHENTICATION`` in your Django project settings:
 
 ```python
-FRONTEND_AUTHENTICATION = True
+FRONTEND_AUTHENTICATION = True  # default
 ```
 Note that this requires Django's authentication system to be properly configured.
 
@@ -489,6 +525,60 @@ frontend.site.register(Author, AuthorFrontend)
 This completes the overview of Django Fast Frontend customization. It offers a high level of customization to create a frontend that meets your application's specific needs. Keep in mind that not all features are covered here, so make sure to explore the Django Fast Frontend's documentation for more advanced features and options.
 
 
+## Security
+
+Django Fast Frontend v0.3.0 follows a **secure-by-default** philosophy. The key security features are:
+
+### Authentication (Default: Required)
+All model frontends require login by default (`login_required = True`). To allow public access to a specific frontend:
+
+```python
+class PublicAuthorFrontend(frontend.ModelFrontend):
+    login_required = False  # Opt-in to public access
+    fields = ('name', 'title')
+```
+
+### Explicit Field Declaration
+Forms never default to `fields="__all__"`. You **must** explicitly declare which fields to expose:
+
+```python
+class AuthorFrontend(frontend.ModelFrontend):
+    fields = ('name', 'title')  # Required — omitting causes an empty form with a warning
+```
+
+If `fields` is not set, the form will have no editable fields and a warning will be logged. This prevents accidental exposure of sensitive model fields.
+
+### Row-Level Authorization (IDOR Protection)
+Override `get_queryset(request)` to scope database queries to the current user, preventing Insecure Direct Object Reference (IDOR) vulnerabilities:
+
+```python
+class ArticleFrontend(frontend.ModelFrontend):
+    fields = ('title', 'content', 'status')
+    list_display = ('title', 'status')
+
+    def get_queryset(self, request=None):
+        qs = super().get_queryset(request)
+        if request and request.user.is_authenticated:
+            return qs.filter(author=request.user)
+        return qs.none()
+```
+
+This ensures users can only view, edit, and delete their own objects.
+
+### Safe Redirects
+All redirects are validated against Django's `ALLOWED_HOSTS` setting. This prevents open-redirect attacks where a malicious `?next=` parameter could send users to an external site.
+
+### Action Dispatch Hardening
+POST actions (inline buttons, toolbar buttons) are validated against:
+1. A strict allowlist of registered action names
+2. A check that the action resolves to a callable method
+
+This prevents arbitrary method invocation through crafted POST requests.
+
+### CDN Subresource Integrity (SRI)
+All CDN-loaded resources (Bootstrap CSS/JS, Bootstrap Icons, jQuery) include `integrity` attributes with SHA-384/SHA-256 hashes. This ensures that CDN-served files have not been tampered with.
+
+
 ## The ModelFrontend Class
 The ``ModelFrontend`` class is a major component of the Django frontend configuration. It inherits from the ``FrontendAbstract`` and ``NotImplementedMixin`` classes and provides a large number of methods and properties that you can use to customize the frontend view for a model.
 
@@ -514,10 +604,23 @@ def get_list_display(self):
 ```
 
 ### Queryset Method
-The ``queryset`` method gets objects of the model with the specified fields. It uses the ``get_fields`` method to determine which fields to include in the queryset. If 'id' is included in the fields, then the queryset values are limited to those fields. If no fields are specified, then all fields except 'id' are included in the queryset values.
+The ``queryset`` method gets objects of the model with the specified fields. It delegates to ``get_queryset(request)`` so that subclass overrides for row-level authorization are respected.
+
+The ``get_queryset(request)`` method returns the base queryset for the model. Override it in your subclass to implement row-level authorization (e.g. filter by the current user):
 
 ```python
-def queryset(self, *args, **kwargs):
+def get_queryset(self, request=None):
+    """Override to scope queries to the current user."""
+    qs = super().get_queryset(request)
+    if request and request.user.is_authenticated:
+        return qs.filter(owner=request.user)
+    return qs.none()
+```
+
+The ``queryset`` method uses ``get_fields`` to determine which fields to include. If 'id' is included in the fields, then the queryset values are limited to those fields. If no fields are specified, then all fields except 'id' are included in the queryset values.
+
+```python
+def queryset(self, request=None, *args, **kwargs):
     ...
 ```
 
@@ -606,3 +709,56 @@ def get_pagination(self, request, objects):
 ```
 
 By overriding these and other ``ModelFrontend`` methods, you can customize the frontend configuration for each Django model in your project.
+
+
+## Upgrading to v0.3.0
+
+If you are upgrading from v0.2.x, review the following breaking changes:
+
+### Breaking Changes
+
+| Change | Before (v0.2.x) | After (v0.3.0) | Action Required |
+|--------|-----------------|-----------------|------------------|
+| `login_required` default | `False` | `True` | Add `login_required = False` to frontends that should remain public |
+| `view_permission` default | `False` | `True` | Add `view_permission = False` if anonymous viewing was intended |
+| Form `fields` default | `"__all__"` | `()` (empty) | Explicitly set `fields` or `list_display` on every `ModelFrontend` |
+| Django minimum | `>=3.2` | `>=4.2` | Upgrade Django to 4.2+ (LTS) |
+| `queryset()` signature | `*args, **kwargs` | `request=None, *args, **kwargs` | Update any direct `queryset()` calls to pass `request` |
+
+### Migration Steps
+
+1. **Upgrade Django** to 4.2 or later:
+   ```bash
+   pip install "django>=4.2,<6.0"
+   ```
+
+2. **Update `django-fast-frontend`**:
+   ```bash
+   pip install --upgrade django-fast-frontend
+   ```
+
+3. **Audit your `ModelFrontend` subclasses**:
+   - Ensure every frontend has explicit `fields` or `list_display`
+   - Add `login_required = False` where public access is intentional
+   - Add `view_permission = False` where needed
+
+4. **Implement row-level authorization** (recommended):
+   ```python
+   class MyFrontend(frontend.ModelFrontend):
+       fields = ('name', 'email')
+
+       def get_queryset(self, request=None):
+           qs = super().get_queryset(request)
+           if request and request.user.is_authenticated:
+               return qs.filter(owner=request.user)
+           return qs.none()
+   ```
+
+5. **Set environment variables** for production:
+   ```bash
+   export DJANGO_SECRET_KEY='your-production-secret-key'
+   export DJANGO_DEBUG='False'
+   export DJANGO_ALLOWED_HOSTS='yourdomain.com,www.yourdomain.com'
+   ```
+
+6. **Test your application** thoroughly after upgrading.
