@@ -74,3 +74,28 @@ h1 {
     background: linear-gradient(90deg, rgba(243, 17, 17, 1) 0%, rgba(255, 170, 0, 1) 20%, rgba(3, 252, 63, 1) 40%, rgba(0, 170, 255, 1) 60%, rgba(170, 0, 255, 1) 80%);
     color: white;
 }
+
+@media (max-width: 767.98px) {
+    h1 {
+        margin-bottom: 16px;
+    }
+
+    .navbar {
+        margin: 8px;
+    }
+
+    .table td,
+    .table th {
+        white-space: nowrap;
+    }
+
+    .frontend-actions > * {
+        width: 100%;
+    }
+
+    .frontend-toolbar .btn,
+    .card .btn,
+    .search-submit {
+        width: 100%;
+    }
+}

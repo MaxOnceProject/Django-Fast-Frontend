@@ -2,47 +2,49 @@
 {% load django_bootstrap5 %}
 {% load django_fast_frontend %}
 
-<table class="table table-hover" id="FrontendTable">
-    <thead>
-    <tr>
-        {% for field in table.fields %}
-            <th>{{ field|title }}</th>
-        {% endfor %}
-        {% if option.table.change %}
-            <th>Edit</th>
-        {% endif %}
-    </tr>
-    </thead>
-    <tbody>
-    {% for object in table.objects %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle" id="FrontendTable">
+        <thead>
         <tr>
-            {% for key, value in object.items %}
-                {% if 'id' in table.fields %}
-                    <td>{{ value }}</td>
-                {% else %}
-                    {% if not key == 'id' %}
-                        <td>{{ value }}</td>
-                    {% endif %}
-                {% endif %}
+            {% for field in table.fields %}
+                <th>{{ field|title }}</th>
             {% endfor %}
-            {% if option.table.inline_button %}
-                {% for inline_button in table.inline_button %}
-                    <td>
-                        <form method="post" class="needs-validation" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=inline_button id=object.id %}">
-                            {% csrf_token %}
-                            {% with inline_button|label as inline_button_label %}
-                                {% bootstrap_button button_type="submit" content=inline_button_label %}
-                            {% endwith %}
-                        </form>
-                    </td>
-                {% endfor %}
-            {% endif %}
             {% if option.table.change %}
-                <td>
-                    <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_change" id=object.id %}">{% bootstrap_button button_type="button" content="<i class='bi bi-pencil'></i> Edit" %}</a>
-                </td>
+                <th>Edit</th>
             {% endif %}
         </tr>
-    {% endfor %}
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+        {% for object in table.objects %}
+            <tr>
+                {% for key, value in object.items %}
+                    {% if 'id' in table.fields %}
+                        <td>{{ value }}</td>
+                    {% else %}
+                        {% if not key == 'id' %}
+                            <td>{{ value }}</td>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                {% if option.table.inline_button %}
+                    {% for inline_button in table.inline_button %}
+                        <td>
+                            <form method="post" class="needs-validation" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=inline_button id=object.id %}">
+                                {% csrf_token %}
+                                {% with inline_button|label as inline_button_label %}
+                                    {% bootstrap_button button_type="submit" content=inline_button_label %}
+                                {% endwith %}
+                            </form>
+                        </td>
+                    {% endfor %}
+                {% endif %}
+                {% if option.table.change %}
+                    <td>
+                        <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_change" id=object.id %}">{% bootstrap_button button_type="button" content="<i class='bi bi-pencil'></i> Edit" %}</a>
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

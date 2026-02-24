@@ -3,11 +3,11 @@
 
 {% block content %}
     <h1>{{ site.title }}</h1>
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
         {% for app_name, app in meta.cards.items %}
             {% for model in app.models %}
-                <div class="col d-flex justify-content-center">
-                    <div class="card h-100" style="width: 18rem;">
+                <div class="col">
+                    <div class="card h-100 w-100">
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex justify-content-center align-items-center" style="height: 150px;">
                                 <i class="bi bi-bootstrap" style="font-size: 3rem;"></i>

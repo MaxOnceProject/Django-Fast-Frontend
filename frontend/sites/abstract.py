@@ -33,7 +33,7 @@ class FrontendSiteAbstract(ABC):
         """
 
         if frontend_class is None:
-            AttributeError('Please specify a frontend class')
+            raise AttributeError('Please specify a frontend class')
         self._registry[model] = frontend_class()
 
     def unregister(self, model):

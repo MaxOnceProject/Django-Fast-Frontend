@@ -1,5 +1,8 @@
+import logging
+
 from django.conf import settings
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import TemplateView
 from django.contrib.auth import views as auth_views
 from django.apps import apps
@@ -8,15 +11,29 @@ from django.contrib.auth import login
 from django.shortcuts import render, redirect
 from . import site
 
+logger = logging.getLogger(__name__)
+
+
+def _safe_redirect(request, fallback="/"):
+    """
+    Returns a safe HttpResponseRedirect. Uses the HTTP_REFERER only if it
+    points to the same host; otherwise falls back to *fallback*.
+    """
+    referer = request.META.get("HTTP_REFERER", "")
+    allowed_hosts = {request.get_host()}
+    if url_has_allowed_host_and_scheme(referer, allowed_hosts=allowed_hosts):
+        return HttpResponseRedirect(referer)
+    return HttpResponseRedirect(fallback)
+
 
 def favicon_view(request):
     """
-    Handles favicon requests and redirects the user back to the referring page.
+    Handles favicon requests by returning an empty 204 No Content response.
 
     :param request: Django HttpRequest object
-    :return: HttpResponseRedirect object to redirect the user to the referring page
+    :return: HttpResponse with status 204
     """
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    return HttpResponse(status=204)
 
 
 class FrontendModelView(TemplateView):
@@ -25,19 +42,42 @@ class FrontendModelView(TemplateView):
     creating, updating, and deleting model instances. This view also handles pagination and searching.
     """
 
+    @staticmethod
+    def _check_global_auth(request):
+        """
+        Centralised global authentication check used by both GET and POST.
+        Returns a redirect response if the user must log in, or None if OK.
+        """
+        global_config = site.get_global_config()
+        login_required = getattr(global_config, 'login_required', True)
+        authentication = getattr(global_config(), 'authentication', True)
+        if login_required and authentication and not request.user.is_authenticated:
+            return site.http_login_redirect(request)
+        return None
+
+    @staticmethod
+    def _check_model_auth(request, model_config):
+        """
+        Centralised per-model authentication check used by both GET and POST.
+        Returns a redirect response if the user must log in, or None if OK.
+        """
+        global_config = site.get_global_config()
+        model_login_required = model_config.get_login_required()
+        authentication = getattr(global_config(), 'authentication', True)
+        if model_login_required and authentication and not request.user.is_authenticated:
+            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+        return None
+
     def get(self, request, *args, app_name=None, model_name=None, action=None, id=None):
         """
         A generic frontend view that can be used to display models and handle common actions like
         creating, updating, and deleting model instances. This view also handles pagination and searching.
         """
 
-        # get global site config
-        global_config = site.get_global_config()
-        global_authentication = getattr(global_config, 'login_required') and getattr(global_config(), 'authentication', True)
-
-        # if global authentication is active this validates that the user is authenticated
-        if global_authentication and not request.user.is_authenticated:
-            return site.http_login_redirect(request)
+        # Centralised global authentication check
+        auth_response = self._check_global_auth(request)
+        if auth_response:
+            return auth_response
 
         # pre-get navbar
         navbar_registry = site.get_navbar_registry()
@@ -68,11 +108,11 @@ class FrontendModelView(TemplateView):
         # get model site config
         model = apps.get_model(app_name, model_name)
         model_config = site.get_model_config(model)
-        model_authentication = model_config.get_login_required() and getattr(global_config(), 'authentication', True)
 
-        # if model authentication is active this validates that the user is authenticated
-        if model_authentication and not request.user.is_authenticated:
-            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+        # Centralised per-model authentication check
+        model_auth_response = self._check_model_auth(request, model_config)
+        if model_auth_response:
+            return model_auth_response
 
         # create model forms
         form_class = model_config.get_form()
@@ -81,7 +121,8 @@ class FrontendModelView(TemplateView):
         if action in ['table_add', 'table_change', 'table_delete']:
 
             if id and action in ['table_change'] and model_config.has_change_permission():
-                object = model.objects.get(id=id)
+                qs = model_config.get_queryset(request)
+                object = qs.get(id=id)
                 form = form_class(request.POST or None, initial=object.__dict__)
                 if model_config.get_readonly_fields():
                     for readonly_field in model_config.get_readonly_fields():
@@ -89,7 +130,7 @@ class FrontendModelView(TemplateView):
 
         list_display = model_config.get_list_display()
         # initiate data object
-        objects, table_fields = model_config.queryset()
+        objects, table_fields = model_config.queryset(request)
 
         # get search, filter and sort
         search_fields = model_config.get_search_fields()
@@ -167,54 +208,76 @@ class FrontendModelView(TemplateView):
         :return: A HttpResponse object with the appropriate response for the request
         """
 
-        # get global site config
-        global_config = site.get_global_config()
-        global_authentication = getattr(global_config, 'authentication', True)
-
-        # if global authentication is active this validates that the user is authenticated
-        if global_authentication and not request.user.is_authenticated:
-            return site.http_login_redirect(request)
+        # Centralised global authentication check (same as GET)
+        auth_response = self._check_global_auth(request)
+        if auth_response:
+            return auth_response
 
         # get model site config
         model = apps.get_model(app_name, model_name)
         model_config = site.get_model_config(model)
-        model_authentication = getattr(model_config, 'login_required', True)
 
-        # if model authentication is active this validates that the user is authenticated
-        if model_authentication and not request.user.is_authenticated:
-            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+        # Centralised per-model authentication check (same as GET)
+        model_auth_response = self._check_model_auth(request, model_config)
+        if model_auth_response:
+            return model_auth_response
 
-        fields = model_config.get_fields()
+        # Fallback URL for safe redirects
+        fallback_url = f"/{app_name}/{model_name}/"
 
         # create model forms
         form_class = model_config.get_form()
 
         if action == 'table_change' and model_config.change_permission:
-            object = model.objects.get(id=id)
+            qs = model_config.get_queryset(request)
+            object = qs.get(id=id)
             form = form_class(request.POST, instance=object)
             if form.is_valid():
                 form.save()
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+            return _safe_redirect(request, fallback=fallback_url)
 
         if action == 'table_add' and model_config.add_permission:
             form = form_class(request.POST)
             if form.is_valid():
                 form.save()
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+            return _safe_redirect(request, fallback=fallback_url)
 
         if action == 'table_delete' and model_config.delete_permission:
-            object = model.objects.get(id=id)
+            qs = model_config.get_queryset(request)
+            object = qs.get(id=id)
             object.delete()
-            return HttpResponseRedirect(f"/{app_name}/{model_name}")
+            return HttpResponseRedirect(fallback_url)
 
-        if action in getattr(model_config, 'toolbar_button'):
-            getattr(model_config, action)()
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        # Toolbar button dispatch — validate action is declared AND callable
+        toolbar_actions = getattr(model_config, 'toolbar_button', ())
+        if action and action in toolbar_actions:
+            handler = getattr(model_config, action, None)
+            if callable(handler):
+                handler()
+            else:
+                logger.warning(
+                    "Action '%s' declared in toolbar_button for %s is not callable.",
+                    action, model_config.__class__.__name__,
+                )
+            return _safe_redirect(request, fallback=fallback_url)
 
-        if action in getattr(model_config, 'inline_button'):
-            object = model.objects.get(id=id)
-            getattr(model_config, action)(object)
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        # Inline button dispatch — validate action is declared AND callable
+        inline_actions = getattr(model_config, 'inline_button', ())
+        if action and action in inline_actions:
+            handler = getattr(model_config, action, None)
+            if callable(handler):
+                qs = model_config.get_queryset(request)
+                object = qs.get(id=id)
+                handler(object)
+            else:
+                logger.warning(
+                    "Action '%s' declared in inline_button for %s is not callable.",
+                    action, model_config.__class__.__name__,
+                )
+            return _safe_redirect(request, fallback=fallback_url)
+
+        # No matching action — return to model list
+        return HttpResponseRedirect(fallback_url)
 
 
 class FrontendAbstractView(TemplateView):

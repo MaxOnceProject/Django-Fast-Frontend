@@ -97,12 +97,24 @@ class ModelFrontend(FrontendAbstract, NotImplementedMixin):
 
         return generate_form_for_model(self.model, fields)
 
-    def queryset(self, *args, **kwargs):
+    def get_queryset(self, request=None):
         """
-        gets objects of a model with the specified fields.
+        Returns the base queryset for this model, optionally scoped by the
+        current request/user.  Override in subclasses to implement row-level
+        authorization (e.g. filter by request.user).
+
+        :param request: The current Django HttpRequest (optional for backward compat)
+        :return: A Django QuerySet
+        """
+        return self.model._default_manager.get_queryset()
+
+    def queryset(self, request=None, *args, **kwargs):
+        """
+        Gets objects of a model with the specified fields.
+        Delegates to get_queryset(request) so subclass overrides are respected.
         """
 
-        qs = self.model._default_manager.get_queryset()
+        qs = self.get_queryset(request)
         fields = self.get_fields()
 
         if 'id' in fields:

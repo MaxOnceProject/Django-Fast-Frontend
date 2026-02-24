@@ -8,12 +8,14 @@
 
 {% block content %}
     {% with request.path|split:"/" as segments %}
-        <div class="col d-flex justify-content-between">
+        <div class="row align-items-center g-2 mb-2">
             {% if option.site.title %}
-                <h1>{{ site.title }}</h1>
+                <h1 class="col-12 col-md mb-0">{{ site.title }}</h1>
             {% endif %}
             {% if segments.3 %}
-                <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 %}">{% bootstrap_button button_class="btn-outline-primary" button_type="button" content="Back" %}</a>
+                <div class="col-12 col-md-auto">
+                    <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 %}">{% bootstrap_button button_class="btn-outline-primary" button_type="button" content="Back" %}</a>
+                </div>
             {% endif %}
         </div>
         {% if segments.3 %}
@@ -22,7 +24,7 @@
             {% endif %}
         {% else %}
             {% if option.site.description %}
-                <div class="col d-flex mb-4">
+                <div class="col-12 mb-4">
                     {{ site.description }}
                 </div>
             {% endif %}
@@ -30,18 +32,14 @@
                 {% include 'frontend/_toolbar.html' %}
             {% endif %}
             {% if option.table.show %}
-                <div class="row">
-                    <div class="col d-flex justify-content-end">
-                        <div class="p-1">
+                <div class="row g-2 mb-2">
+                    <div class="col-12 d-flex flex-column flex-md-row justify-content-md-end align-items-stretch gap-2 frontend-actions">
                             {% if option.table.search %}
                                 {% include 'frontend/_search.html' %}
                             {% endif %}
-                        </div>
-                        <div class="p-1">
 {#                            {% if option.table.filter_sort %}#}
                                 {% include "frontend/_filter_sort.html" %}
 {#                            {% endif %}#}
-                        </div>
                     </div>
                 </div>
                 {% if option.table.cards %}

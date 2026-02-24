@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir --prefer-binary -r /tmp/requirements.txt
 COPY . ${PROJECT_ROOT}
 WORKDIR ${PROJECT_ROOT}
 
-RUN pip install -e frontend
+RUN pip install -e .
 
 RUN chmod +x manage.py \
 #    && python manage.py collectstatic \

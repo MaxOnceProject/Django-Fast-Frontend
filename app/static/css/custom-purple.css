@@ -47,3 +47,28 @@ h1 {
     background-color: #b840b7;
     border-color: #b840b7;
 }
+
+@media (max-width: 767.98px) {
+    h1 {
+        margin-bottom: 16px;
+    }
+
+    .navbar {
+        margin: 8px;
+    }
+
+    .table td,
+    .table th {
+        white-space: nowrap;
+    }
+
+    .frontend-actions > * {
+        width: 100%;
+    }
+
+    .frontend-toolbar .btn,
+    .card .btn,
+    .search-submit {
+        width: 100%;
+    }
+}

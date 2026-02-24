@@ -1,7 +1,7 @@
 <!-- frontend_admin/templates/frontend_admin/admin.html -->
 
-<form method="get" class="d-inline-flex">
+<form method="get" class="d-flex flex-column flex-sm-row gap-2">
     <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search" class="form-control">
-    <button type="submit" class="btn btn-primary ms-2">Search</button>
+    <button type="submit" class="btn btn-primary search-submit">Search</button>
 </form>
 

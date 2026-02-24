@@ -1,4 +1,4 @@
-django>=4.0,<6.0
+django>=4.2,<6.0
 django-bootstrap5>=24.3
 
 factory-boy>=3.3.1

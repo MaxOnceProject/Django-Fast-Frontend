@@ -1,0 +1,70 @@
+# ============================================================
+# Django Fast Frontend — .gitignore
+# ============================================================
+
+# ----- Agent / CI generated docs -----
+agent-output/
+.github/agents/
+
+# ----- Python bytecode & caches -----
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ----- Distribution / packaging -----
+*.egg-info/
+*.egg
+dist/
+build/
+sdist/
+wheels/
+*.whl
+
+# ----- pytest -----
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ----- Django -----
+db.sqlite3
+db.sqlite3-journal
+*.log
+staticfiles/
+media/
+
+# ----- Environment / secrets -----
+.env
+.env.*
+!.env.example
+*.pem
+
+# ----- Virtual environments -----
+venv/
+.venv/
+env/
+ENV/
+
+# ----- IDE / editor -----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+
+# ----- OS files -----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----- mypy / type-checking -----
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ----- tox -----
+.tox/
+
+# ----- Jupyter -----
+.ipynb_checkpoints/
