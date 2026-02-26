@@ -1,7 +1,7 @@
 # Django Fast Frontend 
 ### *Turbocharge Front-End Creation with Django-Admin-Like Configuration*
 
-![Version](https://img.shields.io/badge/version-0.3.0-blue)
+![Version](https://img.shields.io/badge/version-0.4.0-blue)
 ![Django](https://img.shields.io/badge/django-%3E%3D4.2-green)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen)
@@ -10,12 +10,21 @@
 Django Fast Frontend is a Django app that provides an efficient way to customize frontend settings for your Django models. It provides a ``ModelFrontend`` class which allows you to specify various frontend configurations for your models.
 
 Key highlights:
+- **Sidebar navigation** — persistent left-side navigation for easy model access
 - **Secure by default** — authentication required, explicit field declarations, safe redirects
 - **Responsive design** — optimized for desktop, tablet, and mobile devices
 - **Bootstrap 5.3** — modern UI with CDN resources protected by Subresource Integrity (SRI)
 - **Extensible** — override querysets, permissions, actions, and templates
   
 _Note: Django Fast Frontend is a complementary package to Django´s powerful MVT based frontend feature. If you require e.g. static pages for your website you can easily add them to your project using the original Django frontend feature._
+
+## What's New in v0.4.0
+
+### Sidebar Navigation
+- **Persistent Left-Side Navigation** — quickly switch between model frontends from any page.
+- **Custom Grouping and Ordering** — organize your model frontends using a declarative site-level dict.
+- **Hide-Unlisted Behavior** — explicitly control the sidebar density by listing only the models you want shown.
+- **Responsive Bootstrap Layout** — automatic adjustment between desktop (column) and mobile (stacked).
 
 ## What's New in v0.3.0
 
@@ -363,6 +372,62 @@ In addition, you can customize the URL users are redirected to after login and l
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 ```
+
+## Sidebar Navigation
+
+Django Fast Frontend includes a persistent left-side navigation sidebar that lets users quickly switch between model frontends from any page. The sidebar supports custom grouping and ordering.
+
+### Default Behavior (No Configuration)
+
+If you do not configure the sidebar, it automatically displays all registered model frontends grouped by their Django app. Account links (Login, Sign Up, Change Password) are auto-appended when authentication is enabled.
+
+### Configuring Groups and Order
+
+To control which models appear in the sidebar and how they are organized, call ``frontend.site.set_sidebar_navigation()`` in your app's ``frontend.py`` file:
+
+```python
+# app/frontend.py
+
+import frontend
+from app.models import Author
+
+@frontend.register(Author)
+class AuthorFrontend(frontend.ModelFrontend):
+    fields = ('name', 'title')
+    list_display = ('name', 'title')
+
+# Configure the sidebar: groups and order
+frontend.site.set_sidebar_navigation({
+    "Content": [Author],
+    "Directory": ["app2.People"],
+})
+```
+
+The structure is an ordered dict where:
+- **Keys** are group display names (shown as section headings in the sidebar).
+- **Values** are lists of model identifiers, in the order they should appear.
+
+Model identifiers can be:
+- **Model classes** (preferred): e.g. ``Author``
+- **Strings** in ``"app_label.ModelName"`` format: e.g. ``"app2.People"`` (useful to avoid circular imports)
+
+### Hide-Unlisted Behavior
+
+When sidebar navigation is configured, **only the listed models appear**. Any registered model not included in the structure is hidden from the sidebar. This gives you full control over what users see in the navigation.
+
+### Account Links
+
+Account links (Login, Sign Up, Change Password) are **always auto-appended** to the sidebar when authentication is enabled — you do not need to include them in your configuration.
+
+### Auth-Aware Filtering
+
+When authentication is required (``login_required = True`` and ``authentication = True``), anonymous users see only the account links in the sidebar. Model links become visible after login.
+
+### Responsive Layout
+
+The sidebar uses a responsive Bootstrap grid layout:
+- **Desktop** (≥768px): sidebar appears as a left column alongside the main content.
+- **Mobile** (<768px): sidebar stacks above the content area.
 
 ## Integrating with Django's URL System
 To integrate Django Fast Frontend with Django's URL system, you need to include its URLs in your Django project's URL configuration.

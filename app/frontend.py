@@ -31,3 +31,12 @@ class AuthorFrontend(frontend.ModelFrontend):
 
     def uncheck(self, object):
         print(object.title)
+
+
+# Sidebar navigation: groups and order for the side menu.
+# Models not listed here are hidden from the sidebar.
+# Use model classes or "app_label.ModelName" strings.
+frontend.site.set_sidebar_navigation({
+    "Content": [Author],
+    "Directory": ["app2.People"],
+})

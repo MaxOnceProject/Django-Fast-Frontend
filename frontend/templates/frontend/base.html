@@ -79,9 +79,39 @@
     </div>
 {% endfor %}
 
-<main class="container mt-3">
-    {% block content %}
-    {% endblock %}
+<main class="container-fluid mt-3">
+    <div class="row">
+        <!-- Left Sidebar Navigation -->
+        <nav class="col-12 col-md-3 col-lg-2 mb-3 frontend-sidebar" aria-label="Sidebar navigation">
+            {% if meta.sidebar %}
+                {% for group in meta.sidebar %}
+                    <h6 class="sidebar-heading text-muted px-3 mt-3 mb-1 text-uppercase small">{{ group.group }}</h6>
+                    <ul class="nav flex-column mb-2">
+                        {% for item in group.items %}
+                            {% if item.app_name %}
+                                <li class="nav-item">
+                                    <a class="nav-link py-1 px-3" href="{% url 'frontend' app_name=item.app_name model_name=item.name %}">
+                                        {{ item.verbose_name }}
+                                    </a>
+                                </li>
+                            {% elif item.url_name %}
+                                <li class="nav-item">
+                                    <a class="nav-link py-1 px-3" href="{% url item.url_name %}">
+                                        {{ item.verbose_name }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
+            {% endif %}
+        </nav>
+        <!-- Main Content -->
+        <div class="col-12 col-md-9 col-lg-10">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
 </main>
 
 <footer>

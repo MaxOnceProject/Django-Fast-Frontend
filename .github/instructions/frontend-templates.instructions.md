@@ -9,11 +9,14 @@ HTML templates rendered by `FrontendSite.http_response()`. Uses Django template 
 
 ## Template Hierarchy
 ```
-frontend/base.html          ← base layout (navbar, CSS, Bootstrap)
+frontend/base.html          ← base layout (navbar, sidebar, CSS, Bootstrap)
   → frontend/home.html      ← home/app landing page (renders _cards.html)
   → frontend/site.html      ← model list/detail page (renders all partials)
 accounts/form.html           ← login/signup/password forms (extends base.html)
 ```
+
+## Layout
+`base.html` uses a responsive Bootstrap grid: left sidebar (col-md-3 / col-lg-2) for navigation + right content column (col-md-9 / col-lg-10) for `{% block content %}`. On mobile (< md), sidebar stacks above content.
 
 ## Template Blocks
 | Block | Defined In | Purpose | Default Content |
@@ -42,6 +45,7 @@ Loaded via `{% load django_fast_frontend %}`:
 ## Context Variables
 Templates receive context from `views.FrontendModelView.get()` → `site.http_model_response()`:
 - `meta.navbar` — navigation registry (from `site.get_navbar_registry()`)
+- `meta.sidebar` — sidebar navigation groups (from `site.get_sidebar_registry(request=request)`) — list of `{"group": str, "items": [{"name", "verbose_name", "app_name", "description", ...}]}`
 - `meta.css` — CSS path (from `Config.css`)
 - `meta.brand` — brand name (from `Config.brand`)
 - `meta.logo` — logo path (from `Config.logo`)

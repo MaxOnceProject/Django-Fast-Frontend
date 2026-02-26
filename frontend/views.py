@@ -293,7 +293,7 @@ class FrontendAbstractView(TemplateView):
         """
 
         context = super().get_context_data()
-        context = site.get_site_meta(context)
+        context = site.get_site_meta(context, request=self.request)
         context['meta']['title'] = self.title
         return context
 
