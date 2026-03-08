@@ -1,890 +1,636 @@
-# Django Fast Frontend 
-### *Turbocharge Front-End Creation with Django-Admin-Like Configuration*
+# Django Fast Frontend
+
+**Turbocharge front-end creation with Django-admin-like configuration.**
 
 ![Version](https://img.shields.io/badge/version-0.4.1-blue)
-![Django](https://img.shields.io/badge/django-%3E%3D5.2-green)
+![Django](https://img.shields.io/badge/django-%3E%3D4.2-green)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.10-blue)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
+django-fast-frontend is a Django package for building admin-like CRUD frontends from Django models using declarative configuration.
+
+It is best suited for internal tools, back-office dashboards, content management screens, and simple model-driven frontends where you want Django-native forms, auth, and templates without building a separate SPA.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Requirements & Installation](#requirements--installation)
+- [Quick Start](#quick-start)
+- [Usage Guide](#usage-guide)
+  - [Core Concepts](#core-concepts)
+  - [Examples](#examples)
+  - [CRUD and Actions](#crud-and-actions)
+  - [Authentication and Authorization](#authentication-and-authorization)
+- [Configuration](#configuration)
+- [Limitations & Trade-offs](#limitations--trade-offs)
+- [Contributing & Development](#contributing--development)
+- [License & Further Reading](#license--further-reading)
+
 ## Overview
-Django Fast Frontend is a Django app that provides an efficient way to customize frontend settings for your Django models. It provides a ``ModelFrontend`` class which allows you to specify various frontend configurations for your models.
 
-Key highlights:
-- **Sidebar navigation** — persistent left-side navigation for easy model access
-- **Secure by default** — authentication required, explicit field declarations, safe redirects
-- **Responsive design** — optimized for desktop, tablet, and mobile devices
-- **Bootstrap 5.3.8** — modern UI with CDN resources protected by Subresource Integrity (SRI)
-- **Extensible** — override querysets, permissions, actions, and templates
-  
-_Note: Django Fast Frontend is a complementary package to Django´s powerful MVT based frontend feature. If you require e.g. static pages for your website you can easily add them to your project using the original Django frontend feature._
+You define a `ModelFrontend` subclass for each model you want to expose, register it, and the package renders:
 
-## What's New — March 2026 Maintenance Release
+- a frontend home page
+- app-level landing pages
+- model list pages
+- generated add and change forms
+- delete actions
+- search, filter, sort, and pagination UI
+- optional account pages for login, signup, logout, and password flows
 
-### Dependency & Runtime Updates
-- **Python 3.10+** is now the minimum supported version (`python_requires='>=3.10'`)
-- **Django 5.2** is now the minimum for the demo / test harness (`django>=5.2,<6.0`); the library itself stays flexible at `django>=4.2`
-- **Bootstrap 5.3.8** CSS + JS (was 5.3.3) with updated SRI hashes
-- **Bootstrap Icons 1.13.1** (was 1.11.3) with updated SRI hash
-- `django-bootstrap5>=26.2`, `pytest>=9.0`, `pytest-factoryboy>=2.8.1`, `pytest-django>=4.12`
-- Docker base image upgraded from `python:3.10-bullseye` → `python:3.12-slim`
-- `setuptools` pin removed; `migrate` moved from Docker build time to container start-up
+The package uses standard Django models, forms, templates, auth views, and routing. It is admin-like, not admin-compatible.
 
-### Bug Fixes
-- **Logout broken on Django 5.x** — Django 5.x `LogoutView` rejects GET requests (405). The navbar logout link has been replaced with a CSRF-protected POST form. `FrontendLogoutView` now also sets `next_page='/'` so users are redirected to the homepage after signing out.
-- **`UnorderedObjectListWarning` from Paginator** — `get_pagination` now calls `order_by('pk')` on any unordered QuerySet, eliminating the warning without affecting QuerySets that already declare an ordering.
+**Why Use It:**
+Use django-fast-frontend when you want:
 
-## What's New in v0.4.0
+- a CRUD frontend for Django models without building separate views for every model
+- a simpler, more user-facing alternative to Django Admin for internal workflows
+- Bootstrap-based pages that still feel like normal Django templates
+- a declarative setup where most behavior is controlled with attributes instead of repeated boilerplate
 
-### Sidebar Navigation
-- **Persistent Left-Side Navigation** — quickly switch between model frontends from any page.
-- **Custom Grouping and Ordering** — organize your model frontends using a declarative site-level dict.
-- **Hide-Unlisted Behavior** — explicitly control the sidebar density by listing only the models you want shown.
-- **Responsive Bootstrap Layout** — automatic adjustment between desktop (column) and mobile (stacked).
+It is not the right tool if you need full Django Admin parity, complex admin inlines, or a heavily customized frontend application.
 
-## What's New in v0.3.0
+## Features
 
-### Security Hardening
-- **Authentication required by default** — `login_required` now defaults to `True` (was `False`)
-- **Safe redirects** — all redirects are validated against `ALLOWED_HOSTS` to prevent open-redirect attacks
-- **Explicit fields required** — forms no longer default to `fields="__all__"`. You must declare `fields` or `list_display` explicitly
-- **IDOR protection hook** — new `get_queryset(request)` method for row-level authorization
-- **Action dispatch hardening** — only registered, callable actions are executed via POST
-- **CDN integrity** — Bootstrap CSS/JS, Bootstrap Icons, and jQuery are loaded with SRI hashes
+- Declarative per-model configuration with `ModelFrontend`
+- Bootstrap 5 UI with responsive table and card layouts
+- Sidebar or navbar navigation
+- Search, filter, sort, and pagination
+- Safe redirects for POST flows
+- Action dispatch limited to explicitly declared methods
+- Row-level authorization hook via `get_queryset(request)`
+- Forms never default to `fields = "__all__"`
+- Built-in account pages using Django auth views
 
-### Responsive Design
-- Mobile-optimized navigation, tables, cards, toolbars, and search/filter components
-- Proper viewport meta tag and responsive breakpoints
-- Touch-friendly buttons and form controls
+## Requirements & Installation
 
-### Infrastructure
-- Minimum Django version raised to **4.2** (LTS)
-- `django_bootstrap5>=24.3` required
-- Test app code excluded from published package
-- Environment-variable-driven settings for `SECRET_KEY`, `DEBUG`, and `ALLOWED_HOSTS`
-- Default CSS stylesheet shipped with the package
+**Package requirements:**
+- Python 3.10+
+- Django 4.2+
+- `django_bootstrap5>=26.2`
 
-## Installation
-Install Django Fast Frontend with pip:
-``` bash
+*(This repository's demo and test harness currently target Django 5.2 on Python 3.12.)*
+
+```bash
 pip install django-fast-frontend
 ```
 
-Then add ``frontend`` to your ``INSTALLED_APPS`` in your Django project settings:
+Add the required apps to `INSTALLED_APPS`:
 
 ```python
 INSTALLED_APPS = [
-    # ...
-    'django_bootstrap5',
-    'frontend',
-    # ...
+    # Django apps...
+    "django_bootstrap5",
+    "frontend",
+    # your apps...
 ]
 ```
 
 ## Quick Start
-- Add Django Fast Frontend urls to your Django projects ``urls.py``:
-````python
+
+### 1. Add the URLs
+
+Use the same pattern as the demo project:
+
+```python
 from django.urls import path
 import frontend
 
-urlpatterns = [
-    # ...
-    path('', frontend.site.urls),
-    # ...
-]
 
-````
-- Create a file called ``frontend.py`` in one of your Django apps.
-- Add a model to your frontend:
+urlpatterns = [
+    path("accounts/", frontend.accounts.urls),
+    path("", frontend.site.urls),
+]
+```
+
+This package exposes URL tuples directly, so `path(..., frontend.site.urls)` is the expected pattern.
+
+### 2. Register a model frontend
+
+Create `frontend.py` in one of your Django apps:
+
 ```python
 import frontend
-from app.models import <your-model>
+from app.models import Author
 
 
-# Register your model here.
 @frontend.register(Author)
 class AuthorFrontend(frontend.ModelFrontend):
+    fields = ("name", "title")
+    list_display = ("name", "title")
+    search_fields = ("name", "title")
+    sortable_by = ("name", "title")
+```
+
+That gives you:
+
+- a frontend home page
+- an app landing page
+- a model list page
+- search and sorting for the configured fields
+- a generated form for the configured fields
+
+### 3. Run your project
+
+Once Django starts, the `frontend` app autodiscovers `frontend.py` modules from installed apps and registers the frontends it finds.
+
+## Usage Guide
+
+### Core Concepts
+
+#### `ModelFrontend`
+
+`ModelFrontend` is the main extension point. You define what fields to show, which actions are available, how search and filtering behave, and whether the model should render as cards or a table.
+
+#### Registration and autodiscovery
+
+The package scans installed apps for `frontend.py` modules during Django startup. Any classes registered with `@frontend.register(Model)` are added to the site registry automatically.
+
+#### Request flow
+
+At startup:
+
+1. `FrontendConfig.ready()` autodiscovers `frontend.py` modules.
+2. `@frontend.register(Model)` stores each frontend on the site registry.
+3. The default global config is registered.
+4. Account links are registered when authentication is active.
+
+At request time:
+
+1. The package resolves the model from the URL.
+2. It instantiates the matching `ModelFrontend`.
+3. It builds the queryset via `get_queryset(request)`.
+4. It applies search, filter, sort, and pagination.
+5. It renders either the table view or card view.
+
+#### URL structure
+
+Main frontend routes:
+
+- `/`
+- `/favicon.ico`
+- `/<app_name>/`
+- `/<app_name>/<model_name>/`
+- `/<app_name>/<model_name>/<action>`
+- `/<app_name>/<model_name>/<action>/<id>`
+
+Account routes:
+
+- `/accounts/login/`
+- `/accounts/signup/`
+- `/accounts/logout/`
+- `/accounts/password_change/`
+- `/accounts/password_change/done/`
+- `/accounts/password_reset/`
+- `/accounts/password_reset/done/`
+- `/accounts/reset/<uidb64>/<token>/`
+- `/accounts/reset/done/`
+
+### Examples
+
+#### Minimal example
+
+```python
+import frontend
+from app.models import Author
+
+
+@frontend.register(Author)
+class AuthorFrontend(frontend.ModelFrontend):
+    fields = ("name", "title")
+    list_display = ("name", "title")
+```
+
+#### Full-featured example
+
+The repository's `app/frontend.py` demonstrates a more complete setup:
+
+```python
+@frontend.register(Author)
+class AuthorFrontend(frontend.ModelFrontend):
+    fields = ("name", "title")
+    login_required = False
+    list_display = ("name", "title")
+    inline_button = ("check", "uncheck")
+    cards = True
+    list_filter = ("name", "title")
+    search_fields = ("name", "title", "birth_date")
+    toolbar_button = ("everything", "everything_everything")
+    sortable_by = ("name", "title")
+```
+
+This shows the intended “full-featured” usage pattern.
+
+#### Historical minimal demo app
+
+The repository's `app2/frontend.py` keeps a deliberately minimal example:
+
+```python
+@frontend.register(People)
+class PeopleFrontend(frontend.ModelFrontend):
     pass
 ```
-This will create the following features by default:
-- A responsive frontend website
-- A navigation bar
-- A general landing page in your frontend
-- A landing page for each Django app in your frontend
-- A site with a table containing all fields and data of the Django model registered with Django Fast Frontend in ``frontend.py``
 
+This still demonstrates registration, but for real projects you should prefer explicit `fields` or `list_display`.
 
-- Setup authentication for sites generated by Django Fast Frontend:
-````python
-from django.urls import path
-import frontend
+### CRUD and Actions
 
-urlpatterns = [
-    # ...
-    path('accounts/', frontend.accounts.urls),
-    path('', frontend.site.urls),
-    # ...
-]
-````
+#### Built-in CRUD actions
 
+The package supports three built-in mutating actions:
 
-________________________
+- `table_add`
+- `table_change`
+- `table_delete`
 
+They are controlled by:
 
-# Django Fast Frontend: Documentation
-## Configuration
-### Project Settings
-In your ``settings.py`` file, you can set various global settings for Django Fast Frontend:
+- `add_permission`
+- `change_permission`
+- `delete_permission`
+
+#### Toolbar actions
+
+Toolbar actions are methods declared in `toolbar_button` and invoked with no arguments.
 
 ```python
-# settings.py
-# ...
-
-FRONTEND_CUSTOM_CSS = 'css/custom.css'  # Path to custom CSS file
-FRONTEND_BRAND = 'Fast Frontend'  # Brand name
-FRONTEND_LOGO = 'img/django-fast-frontend-logo-text.PNG'  # Logo file path
-FRONTEND_DESCRIPTION = "Powerful and interesting description for your frontend"  # Description for your frontend
-FRONTEND_AUTHENTICATION = True  # Whether authentication is required in general
-FRONTEND_SIDEBAR = True  # Show sidebar navigation (True, default) or navbar-only mode (False)
-
-# ...
-```
-
-### URL Configuration
-In your ``urls.py`` file, include the Django Fast Frontend URLs:
-
-```python
-# urls.py
-# ...
-
-from django.urls import include, path
-import frontend
-
-urlpatterns = [
-    # ...
-    path('accounts/', include(frontend.accounts.urls)),
-    path('', include(frontend.site.urls)),
-    # ...
-]
-```
-
-## Usage
-### Django Models
-- Use `verbose_name_plural` and `verbose_name` to display a correct name for your model tables in the frontend
-```
-class Author(models.Model):
-    class Meta:
-        verbose_name = "Author"
-        verbose_name_plural = "Authors"
-        db_table_comment = "A List of Authors"
-```
-
-### Creating a Model Frontend
-To create a frontend for a model, you need to create a subclass of 
-- ``frontend.ModelFrontend`` and register it with 
-- ``frontend.site``. Here's an example for a model named 
-- ``Author``:
-
-```python
-# app/frontend.py
-# ...
-
-import frontend
-from app.models import Author
-
-class AuthorFrontend(frontend.ModelFrontend):
-    fields = ('name', 'title')  # Fields to display (REQUIRED — no default)
-    login_required = True  # Whether login is required (default: True)
-    list_display = ('name', 'title')  # Fields to display in list view
-    inline_button = ('inline_button1', 'inline_button2')  # Methods for inline buttons
-    view_permission = True  # Whether view permission is required (default: True)
-    cards = True  # Whether to display instances as cards
-    list_filter = ('name', 'title')  # Fields for list view filter
-    search_fields = ('name', 'title', 'birth_date')  # Fields for search
-    readonly_fields = ('name', 'title')  # Fields that are read-only
-    change_permission = True  # Whether change permission is required
-    delete_permission = True  # Whether delete permission is required
-    add_permission = True  # Whether add permission is required
-    list_per_page = 5  # Number of instances per page
-    toolbar_button = ('toolbar_button1', 'toolbar_button2')  # Methods for toolbar buttons
-    description = "Everything about authors."  # Description for the frontend
-    sortable_by = ('name', 'title')  # Fields that can be sorted
-
-    # Define your custom methods here:
-    def toolbar_button1(self):
-        # Your custom code here...
-
-    def toolbar_button2(self):
-        # Your custom code here...
-
-    def inline_button1(self, object):
-        # Your custom code here...
-
-    def inline_button2(self, object):
-        # Your custom code here...
-
-# Register your model frontend:
-frontend.site.register(Author, AuthorFrontend)
-```
-
-## Customizing the Frontend
-You can customize the appearance and behavior of your model frontend by overriding various attributes and methods in your ``ModelFrontend`` subclass.
-
-### Field Display
-To customize which fields are displayed in the list view, set ``list_display`` to a tuple of field names:
-
-```python
-list_display = tuple()
-```
-
-### Field Filtering
-To add a filter sidebar that lets users filter the list view by certain fields, set ``list_filter`` to a tuple of field names:
-
-```python
-list_filter = tuple()
-```
-
-### Field Searching
-To enable a search box that lets users search the list view by certain fields, set ``search_fields`` to a tuple of field names:
-
-```python
-search_fields = tuple()
-```
-
-### Field Sorting
-To enable sorting of the list view by certain fields, set ``sortable_by`` to a tuple of field names:
-
-```python
-sortable_by = tuple()
-```
-
-### Pagination
-To customize the number of instances displayed per page, set ``list_per_page`` to the desired number:
-
-```python
-list_per_page = 100
-```
-
-### Read-Only Fields
-To make certain fields read-only in the frontend, set ``readonly_fields`` to a tuple of field names:
-
-```python
-readonly_fields = tuple()
-```
-
-### Inline Buttons
-You can add custom inline buttons to your list view by defining methods for them in your ``ModelFrontend`` subclass and adding them to the ``inline_button`` attribute:
-
-```python
-inline_button = ('inline_button1', 'inline_button2')
-
-def inline_button1(self, object):
-    # Your custom code here...
-
-def inline_button2(self, object):
-    # Your custom code here...
-```
-_Note: The name of a buttons follows the name of the function._
-
-### Toolbar Buttons
-Similarly, you can add custom toolbar buttons by defining methods for them and adding them to the ``toolbar_button`` attribute:
-
-```python
-toolbar_button = ('toolbar_button1', 'toolbar_button2')
-
-def toolbar_button1(self):
-    # Your custom code here...
-
-def toolbar_button2(self):
-    # Your custom code here...
-```
-_Note: The name of a buttons follows the name of the function._
-
-### Permissions
-You can control permissions for viewing, adding, changing, and deleting instances by setting the ``view_permission``, ``add_permission``, ``change_permission``, and ``delete_permission`` attributes:
-
-```python
-view_permission = True
-change_permission = False
-delete_permission = False
-add_permission = False
-```
-Note that these permissions are checked in addition to the standard Django model permissions.
-
-### Description
-You can add a description for your model frontend by setting the ``description`` attribute:
-
-```python
-description = str()
-```
-This description will be displayed in the frontend.
-
-### Registration
-Finally, to make your model frontend active, you need to register it with ``frontend.site``:
-
-```python
-frontend.site.register(Author, AuthorFrontend)
-```
-This will create URLs for the list, add, change, and delete views for your model, based on the model's name.
-
-## Custom CSS
-You can provide a custom CSS file for your Django Fast Frontend by setting ``FRONTEND_CUSTOM_CSS`` in your Django project settings to the path of your CSS file:
-
-```python
-FRONTEND_CUSTOM_CSS = 'css/custom.css'
-```
-This CSS file will be included in all Django Fast Frontend pages.
-
-## Branding
-You can specify a custom brand name and logo for your Django Fast Frontend by setting ``FRONTEND_BRAND`` and ``FRONTEND_LOGO`` in your Django project settings:
-
-```python
-FRONTEND_BRAND = 'Fast Frontend'
-FRONTEND_LOGO = 'img/django-fast-frontend-logo-text.PNG'
-```
-This brand name and logo will be displayed in the navbar of all Django Fast Frontend pages.  
-
-You can provide a description for your Django Fast Frontend by setting ``FRONTEND_DESCRIPTION`` in your Django project settings:
-
-```python
-FRONTEND_DESCRIPTION = "This is a description for the Django Fast Frontend."
-```
-This description will be displayed on the frontend's main page.
-
-## Frontend URL
-By default, Django Fast Frontend automatically generates URLs for your model frontends based on their names. If you want to override this, you can set ``FRONTEND_URL`` in your Django project settings to your desired URL path:
-
-```python
-FRONTEND_URL = '/your-favorite-url-path/'
-```
-Note that this URL path should start and end with a slash.
-
-## Authentication
-**As of v0.3.0, Django Fast Frontend requires users to be logged in by default** (`login_required = True`). If you want to allow anonymous access to a specific model frontend, set `login_required = False` on that frontend class.
-
-You can also control global authentication by setting ``FRONTEND_AUTHENTICATION`` in your Django project settings:
-
-```python
-FRONTEND_AUTHENTICATION = True  # default
-```
-Note that this requires Django's authentication system to be properly configured.
-
-Important: To use Django Fast Frontend authentication for sites enable the frontend URLs:
-````python
-from django.urls import path
-import frontend
-
-urlpatterns = [
-    # ...
-    path('accounts/', frontend.accounts.urls),
-    path('', frontend.site.urls),
-    # ...
-]
-````
-_Note: It is possible to use a different authentication system._  
-
-In addition, you can customize the URL users are redirected to after login and logout by setting ``LOGIN_REDIRECT_URL`` and ``LOGOUT_REDIRECT_URL`` in your Django project settings:
-
-```python
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
-```
-
-## Sidebar Navigation
-
-Django Fast Frontend includes a persistent left-side navigation sidebar that lets users quickly switch between model frontends from any page. The sidebar supports custom grouping and ordering.
-
-### Enabling / Disabling the Sidebar
-
-The sidebar is **enabled by default**. To switch to navbar-only navigation (all app dropdowns appear in the top navbar instead), add this to your `settings.py`:
-
-```python
-FRONTEND_SIDEBAR = False  # disable sidebar; show app dropdowns in navbar
-```
-
-### Default Behavior (No Configuration)
-
-If you do not configure the sidebar, it automatically displays all registered model frontends grouped by Django app. The **group display name** comes from the app's `AppConfig.verbose_name`. Set it in your `apps.py` to control the heading users see:
-
-```python
-# myapp/apps.py
-from django.apps import AppConfig
-
-class MyAppConfig(AppConfig):
-    name = 'myapp'
-    verbose_name = 'Content'  # shown as the sidebar group heading
-```
-
-**Account links** (Login, Sign Up, Change Password) always appear in the **navbar account icon** on the top right, not in the sidebar.
-
-### Configuring Groups and Order
-
-To control which models appear in the sidebar and how they are organized, call ``frontend.site.set_sidebar_navigation()`` in your app's ``frontend.py`` file:
-
-```python
-# app/frontend.py
-
-import frontend
-from app.models import Author
-
 @frontend.register(Author)
 class AuthorFrontend(frontend.ModelFrontend):
-    fields = ('name', 'title')
-    list_display = ('name', 'title')
+    fields = ("name", "title")
+    toolbar_button = ("rebuild_index",)
 
-# Configure the sidebar: groups and order
+    def rebuild_index(self):
+        print("rebuilding")
+```
+
+#### Inline actions
+
+Inline actions are methods declared in `inline_button` and invoked with the object instance.
+
+```python
+@frontend.register(Author)
+class AuthorFrontend(frontend.ModelFrontend):
+    fields = ("name", "title")
+    inline_button = ("publish",)
+
+    def publish(self, obj):
+        obj.is_published = True
+        obj.save(update_fields=["is_published"])
+```
+
+Only actions explicitly listed in `toolbar_button` or `inline_button` are dispatched.
+
+#### Search, filter, sort, and pagination
+
+Search:
+
+- driven by `search_fields`
+- uses case-insensitive `icontains`
+- query parameter: `q`
+
+Filter:
+
+- driven by `list_filter`
+- values come from field choices or distinct database values
+- query parameters use the field names directly
+
+Sort:
+
+- driven by `sortable_by`
+- query parameter: `s`
+- descending sort uses `-field_name`
+
+Pagination:
+
+- driven by `list_per_page`
+- query parameter: `page`
+- unordered querysets are normalized with `order_by("pk")` before pagination
+
+### Authentication and Authorization
+
+Authentication is required by default.
+
+This is controlled by the global config and per-model `login_required` flags.
+
+To use the built-in account pages, include:
+
+```python
+path("accounts/", frontend.accounts.urls)
+```
+
+Important current behavior:
+
+- the package does not read a `FRONTEND_AUTHENTICATION` setting
+- auth availability is inferred from Django auth backends plus the presence of the `account_login` URL
+- logout is POST-only and redirects to `/` by default
+
+If you want anonymous access for one model, disable it on that frontend:
+
+```python
+@frontend.register(Author)
+class PublicAuthorFrontend(frontend.ModelFrontend):
+    fields = ("name", "title")
+    login_required = False
+```
+
+The demo app uses exactly this pattern in `app/frontend.py`.
+
+Use `get_queryset(request)` to scope data per user.
+
+```python
+@frontend.register(Invoice)
+class InvoiceFrontend(frontend.ModelFrontend):
+    fields = ("number", "status", "total")
+    list_display = ("number", "status", "total")
+
+    def get_queryset(self, request=None):
+        queryset = super().get_queryset(request)
+        if request and not request.user.is_superuser:
+            queryset = queryset.filter(owner=request.user)
+        return queryset
+```
+
+This hook is important because object lookups for change, delete, and inline actions use this queryset.
+
+## Configuration
+
+Supported settings:
+
+```python
+FRONTEND_LOGIN_REQUIRED = True
+FRONTEND_SIDEBAR = True
+FRONTEND_BRAND = "Django Fast Frontend"
+FRONTEND_LOGO = "img/django-fast-frontend-logo.png"
+FRONTEND_CUSTOM_CSS = "css/custom.css"
+FRONTEND_DESCRIPTION = ""
+FRONTEND_AUTO_URL = False
+FRONTEND_URL = ""
+FRONTEND_SITE_CLASS = None
+```
+
+### Branding
+
+```python
+FRONTEND_BRAND = "Fast Frontend"
+FRONTEND_LOGO = "img/my-logo.png"
+FRONTEND_DESCRIPTION = "Internal tools for the content team"
+```
+
+### Navigation
+
+Sidebar navigation is enabled by default.
+
+```python
+FRONTEND_SIDEBAR = True
+```
+
+Disable it to use navbar-only navigation:
+
+```python
+FRONTEND_SIDEBAR = False
+```
+
+By default, sidebar groups are derived from installed app frontends. Group labels come from `AppConfig.verbose_name`.
+
+In this repository, the demo apps produce these group labels:
+
+- `app` → `Content`
+- `app2` → `Directory`
+
+Custom sidebar grouping:
+
+```python
+import frontend
+from app.models import Author
+from app2.models import People
+
+
 frontend.site.set_sidebar_navigation({
     "Content": [Author],
+    "Directory": [People],
+})
+```
+
+You can also use string model identifiers:
+
+```python
+frontend.site.set_sidebar_navigation({
+    "Content": ["app.Author"],
     "Directory": ["app2.People"],
 })
 ```
 
-The structure is an ordered dict where:
-- **Keys** are group display names (shown as section headings in the sidebar).
-- **Values** are lists of model identifiers, in the order they should appear.
+Configured sidebar behavior:
 
-Model identifiers can be:
-- **Model classes** (preferred): e.g. ``Author``
-- **Strings** in ``"app_label.ModelName"`` format: e.g. ``"app2.People"`` (useful to avoid circular imports)
+- group order is preserved
+- item order is preserved
+- only listed models are shown
+- invalid or unregistered entries are skipped
+- account links stay in the navbar dropdown, not the sidebar
 
-### Hide-Unlisted Behavior
+### Custom CSS
 
-When sidebar navigation is configured, **only the listed models appear**. Any registered model not included in the structure is hidden from the sidebar. This gives you full control over what users see in the navigation.
-
-### Account Links
-
-Account links (Login, Sign Up, Change Password) appear in the **navbar account icon** (top-right dropdown), not in the sidebar. You do not need to include them in your sidebar configuration.
-
-### Auth-Aware Filtering
-
-When authentication is required (``login_required = True`` and ``authentication = True``), the sidebar is empty for anonymous users — model links become visible only after login.
-
-### Responsive Layout
-
-The sidebar uses a responsive Bootstrap grid layout:
-- **Desktop** (≥768px): sidebar appears as a left column alongside the main content.
-- **Mobile** (<768px): sidebar stacks above the content area.
-
-## Integrating with Django's URL System
-To integrate Django Fast Frontend with Django's URL system, you need to include its URLs in your Django project's URL configuration.
-
-For example, if you want to serve your Django Fast Frontend at the URL path ``/accounts/``, you can add the following line to your ``urls.py`` file:
+`FRONTEND_CUSTOM_CSS` lets you load your own stylesheet on every django-fast-frontend page.
 
 ```python
-path('accounts/', include(frontend.accounts.urls)),
+FRONTEND_CUSTOM_CSS = "css/custom.css"
 ```
-Similarly, if you want to serve your Django Fast Frontend at the root URL path /, you can add the following line:
+
+In plain terms, this is the easiest way to make the frontend look like it belongs to your project without changing package templates.
+
+Typical use cases:
+
+- change brand colors
+- adjust spacing and typography
+- style the sidebar or navbar
+- make tables denser for internal tools
+- highlight buttons, cards, or status values
+
+Where to put the file:
+
+- create a static file in your project or app, for example `static/css/custom.css`
+- keep the setting value relative to your static files directory, for example `css/custom.css`
+
+Example project setup:
 
 ```python
-path('', include(frontend.site.urls)),
+# settings.py
+FRONTEND_CUSTOM_CSS = "css/custom.css"
 ```
 
-## Customizing the Model Frontend
-Django Fast Frontend provides a class-based system for customizing the frontend for each Django model. To create a frontend for a model, you need to create a subclass of ``frontend.ModelFrontend`` and register it with ``frontend.site``.
+```text
+myapp/
+  static/
+    css/
+      custom.css
+```
 
-Here is an example of how to create and register a frontend for the ``Author`` model:
+Example `custom.css`:
+
+```css
+body {
+    background: #f6f8fb;
+}
+
+.navbar {
+    border-bottom: 1px solid #d9e2ec;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.frontend-sidebar .nav-link {
+    border-radius: 8px;
+}
+
+.frontend-sidebar .nav-link:hover {
+    background: #e9f2ff;
+}
+
+.frontend-toolbar .btn-primary {
+    background: #0f766e;
+    border-color: #0f766e;
+}
+```
+
+How to work with it safely:
+
+- start with small visual changes first
+- prefer overriding colors, spacing, and typography before rewriting layout behavior
+- inspect the rendered HTML in your browser when targeting specific classes
+- keep selectors specific enough to avoid changing unrelated pages in your project
+
+What the setting does not do:
+
+- it does not compile Sass
+- it does not automatically create the file for you
+- it does not replace Bootstrap, it simply loads your stylesheet after the package assets so your rules can override them
+
+If you need deeper structural changes than CSS can handle, move to custom templates or custom views.
+
+The demo app ships a few ready-made theme files under `app/static/css/`:
+
+- `custom.css`
+- `custom-blue.css`
+- `custom-purple.css`
+- `custom-rgb.css`
+
+The demo project currently uses:
 
 ```python
-import frontend
-from app.models import Author
-
-class AuthorFrontend(frontend.ModelFrontend):
-    # ...
-
-frontend.site.register(Author, AuthorFrontend)
+FRONTEND_CUSTOM_CSS = "css/custom-purple.css"
 ```
 
-### Customizing Fields
-You can specify which fields of the model to display in the frontend by setting the ``fields`` attribute:
+### Auto URL wiring
+
+If `FRONTEND_AUTO_URL` is truthy, the app appends `frontend.urls` to your root URLconf at startup.
 
 ```python
-class AuthorFrontend(frontend.ModelFrontend):
-    fields = ('name', 'title')
+FRONTEND_AUTO_URL = True
+FRONTEND_URL = "portal"
 ```
 
-In this example, only the ``name`` and ``title`` fields of the ``Author`` model will be displayed.
+That produces a frontend mounted under `/portal/`.
 
-### Customizing Permissions
-You can control whether users are allowed to view, add, change, or delete objects of the model by setting the ``view_permission``, ``add_permission``, ``change_permission``, and ``delete_permission`` attributes, respectively:
+Notes:
 
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    view_permission = False
-    change_permission = True
-    delete_permission = True
-    add_permission = True
-```
-In this example, users are not allowed to view Author objects, but they are allowed to add, change, and delete them.
+- leading slashes are normalized away
+- a trailing slash is added automatically when needed
+- do not combine `FRONTEND_AUTO_URL` with manual inclusion of the same frontend URLs
 
-### Customizing Display
-You can customize how objects of the model are displayed in the list view by setting the ``list_display`` attribute:
+### Custom site class
 
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    list_display = ('name', 'title')
-```
-In this example, the list view will display the ``name`` and ``title`` fields of each ``Author`` object.
+You can replace the default site singleton by providing `FRONTEND_SITE_CLASS`.
 
-You can also specify which fields are available for sorting by setting the ``sortable_by`` attribute:
+## Limitations & Trade-offs
 
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    sortable_by = ('name', 'title')  # List of fields available for sorting
-```
-In this example, users can sort the list view by the ``name`` or ``title`` fields.
+django-fast-frontend intentionally does not support most advanced Django Admin APIs.
 
-### Customizing Search
-You can enable search for the model by setting the ``search_fields`` attribute:
+Examples of unsupported admin concepts:
 
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    search_fields = ('name', 'title', 'birth_date')
-```
-In this example, users can search ``Author`` objects by their ``name``, ``title``, or ``birth_date`` fields.
+- `fieldsets`
+- `inlines`
+- `autocomplete_fields`
+- `list_editable`
+- `prepopulated_fields`
+- `save_model()` and related admin hooks
 
-### Customizing Inline Actions
-You can add inline actions to the model by defining methods on your ``ModelFrontend`` subclass and including their names in the ``inline_button`` attribute:
+Use custom forms, custom methods, or custom views when you need behavior outside the supported `ModelFrontend` surface.
 
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    inline_button = ('check', 'uncheck')
+## Contributing & Development
 
-    def check(self, object):
-        print(object.name)
+### Repository Layout
 
-    def uncheck(self, object):
-        print(object.title)
-```
-In this example, each ``Author`` object in the list view will have a ``check`` and ``uncheck`` button. When clicked, these buttons will call the corresponding methods on the ``AuthorFrontend`` instance, passing the ``Author`` object as an argument.
+This repository contains both the published package and a demo harness:
 
-### Customizing Toolbar Actions
-Similarly, you can add toolbar actions by defining methods and including their names in the ``toolbar_button`` attribute:
+- `frontend/`: the actual PyPI package
+- `app/`: a full-featured demo app showing search, filter, sort, cards, toolbar actions, inline actions, and a public frontend override
+- `app2/`: a minimal demo app showing pass-through registration with an intentionally empty frontend subclass
+- `project/`: the local demo Django project used for development and testing
 
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    toolbar_button = ('everything', 'everything_everything')
+Only `frontend/` is distributed in the published package. The demo apps and project are examples, not part of the installable library.
 
-    def everything(self):
-        print(self)
+### Development Setup
 
-    def everything_everything(self):
-        print(self)
-```
-In this example, the frontend will have a toolbar with an ``everything`` and ``everything_everything`` button. When clicked, these buttons will call the corresponding methods on the ``AuthorFrontend`` instance.
+For local development in this repository:
 
-### Customizing Pagination
-You can control how many objects are displayed per page in the list view by setting the ``list_per_page`` attribute:
-
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    list_per_page = 5
-```
-In this example, the list view will display 5 ``Author`` objects per page.
-
-### Customizing Filters
-You can add a sidebar for filtering the list view by setting the ``list_filter`` attribute:
-
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    list_filter = ('name', 'title')
-```
-In this example, the list view will include a sidebar that allows users to filter ``Author`` objects by their ``name`` or ``title`` fields.
-
-### Customizing Read-Only Fields
-You can specify which fields should be read-only by setting the ``readonly_fields`` attribute:
-
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    readonly_fields = ('name', 'title')
-```
-In this example, the ``name`` and ``title`` fields will be displayed as read-only.
-
-### Customizing Cards
-If you want to display your data in a card format, you can set the ``cards`` attribute to ``True``:
-
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    cards = True
-```
-In this example, the ``Author`` objects will be displayed in a card format.
-
-### Customizing Frontend Description
-You can add a description to your frontend by setting the ``description`` attribute:
-
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    description = f"everything_everything everything_everything everything_everything "
-```
-In this example, the description will be displayed on the frontend.
-
-Remember to register your ``ModelFrontend`` subclass with ``frontend.site`` so that it is used:
-
-```python
-frontend.site.register(Author, AuthorFrontend)
+```bash
+pip install -r requirements.txt
+pip install -e .
 ```
 
-This completes the overview of Django Fast Frontend customization. It offers a high level of customization to create a frontend that meets your application's specific needs. Keep in mind that not all features are covered here, so make sure to explore the Django Fast Frontend's documentation for more advanced features and options.
+The demo project reads these environment variables:
 
+- `DJANGO_SECRET_KEY`
+- `DJANGO_DEBUG`
+- `DJANGO_ALLOWED_HOSTS`
+- `DJANGO_SETTINGS_MODULE`
 
-## Security
+Example:
 
-Django Fast Frontend v0.3.0 follows a **secure-by-default** philosophy. The key security features are:
-
-### Authentication (Default: Required)
-All model frontends require login by default (`login_required = True`). To allow public access to a specific frontend:
-
-```python
-class PublicAuthorFrontend(frontend.ModelFrontend):
-    login_required = False  # Opt-in to public access
-    fields = ('name', 'title')
+```bash
+export DJANGO_SECRET_KEY='your-secret-key'
+export DJANGO_DEBUG='False'
+export DJANGO_ALLOWED_HOSTS='localhost,127.0.0.1'
+export DJANGO_SETTINGS_MODULE='project.settings'
 ```
 
-### Explicit Field Declaration
-Forms never default to `fields="__all__"`. You **must** explicitly declare which fields to expose:
+The demo project already wires:
 
-```python
-class AuthorFrontend(frontend.ModelFrontend):
-    fields = ('name', 'title')  # Required — omitting causes an empty form with a warning
+- `path("accounts/", frontend.accounts.urls)`
+- `path("", frontend.site.urls)`
+
+Run tests locally:
+
+```bash
+python -m pytest
 ```
 
-If `fields` is not set, the form will have no editable fields and a warning will be logged. This prevents accidental exposure of sensitive model fields.
+Run tests with Docker:
 
-### Row-Level Authorization (IDOR Protection)
-Override `get_queryset(request)` to scope database queries to the current user, preventing Insecure Direct Object Reference (IDOR) vulnerabilities:
-
-```python
-class ArticleFrontend(frontend.ModelFrontend):
-    fields = ('title', 'content', 'status')
-    list_display = ('title', 'status')
-
-    def get_queryset(self, request=None):
-        qs = super().get_queryset(request)
-        if request and request.user.is_authenticated:
-            return qs.filter(author=request.user)
-        return qs.none()
+```bash
+docker-compose run --rm app python -m pytest
 ```
 
-This ensures users can only view, edit, and delete their own objects.
+Run migrations:
 
-### Safe Redirects
-All redirects are validated against Django's `ALLOWED_HOSTS` setting. This prevents open-redirect attacks where a malicious `?next=` parameter could send users to an external site.
-
-### Action Dispatch Hardening
-POST actions (inline buttons, toolbar buttons) are validated against:
-1. A strict allowlist of registered action names
-2. A check that the action resolves to a callable method
-
-This prevents arbitrary method invocation through crafted POST requests.
-
-### CDN Subresource Integrity (SRI)
-All CDN-loaded resources (Bootstrap CSS/JS, Bootstrap Icons, jQuery) include `integrity` attributes with SHA-384/SHA-256 hashes. This ensures that CDN-served files have not been tampered with.
-
-
-## The ModelFrontend Class
-The ``ModelFrontend`` class is a major component of the Django frontend configuration. It inherits from the ``FrontendAbstract`` and ``NotImplementedMixin`` classes and provides a large number of methods and properties that you can use to customize the frontend view for a model.
-
-Here are the primary components of the ``ModelFrontend`` class:
-
-### Class Variables
-The class variables in the ``ModelFrontend`` class are used to configure the frontend views. They include options for login requirements, toolbar buttons, list display fields, pagination, permissions, search, sorting, filtering, readonly fields, and more. Each of these class variables can be overridden in subclasses to provide custom configurations for different models.
-
-### Initialization
-The ``ModelFrontend`` class is initialized with a ``model`` keyword argument, which specifies the Django model to configure frontend settings for. This model is stored in the ``self.model`` instance variable.
-
-```python
-def __init__(self, *args, **kwargs):
-    self.model = kwargs.get('model', None)
+```bash
+python manage.py migrate
 ```
 
-### Get Methods
-The ``ModelFrontend`` class includes a number of get methods that return the values of the class variables. These methods can be overridden in subclasses to provide custom logic for determining the values of the class variables.
+Run the demo server with Docker:
 
-```python
-def get_list_display(self):
-    return self.list_display
+```bash
+docker-compose up --build
 ```
 
-### Queryset Method
-The ``queryset`` method gets objects of the model with the specified fields. It delegates to ``get_queryset(request)`` so that subclass overrides for row-level authorization are respected.
+The demo server is exposed at `http://localhost:8000`.
 
-The ``get_queryset(request)`` method returns the base queryset for the model. Override it in your subclass to implement row-level authorization (e.g. filter by the current user):
+## License & Further Reading
 
-```python
-def get_queryset(self, request=None):
-    """Override to scope queries to the current user."""
-    qs = super().get_queryset(request)
-    if request and request.user.is_authenticated:
-        return qs.filter(owner=request.user)
-    return qs.none()
-```
+Released under the **MIT License**.
 
-The ``queryset`` method uses ``get_fields`` to determine which fields to include. If 'id' is included in the fields, then the queryset values are limited to those fields. If no fields are specified, then all fields except 'id' are included in the queryset values.
-
-```python
-def queryset(self, request=None, *args, **kwargs):
-    ...
-```
-
-### Pagination Method
-The ``get_pagination`` method gets a paginator for the objects and returns the paginated objects. It uses the ``get_list_per_page`` method to determine how many objects to include on each page.
-
-If the provided QuerySet has no ordering (i.e. ``objects.ordered`` is ``False``), ``get_pagination`` automatically applies ``order_by('pk')`` to ensure consistent page results and suppress Django's ``UnorderedObjectListWarning``.
-
-```python
-def get_pagination(self, request, objects):
-    ...
-```
-
-### Model Actions Method
-The ``get_model_actions`` method gets the actions to include in the table fields for the frontend view. If ``inline_button`` is defined, then these actions are added to the table fields.
-
-```python
-def get_model_actions(self, inline_button):
-    ...
-```
-
-### Search, Filter, and Sort Methods
-The ``get_search_results``, ``get_filter_results``, and ``get_sort_results`` methods are used to apply search, filter, and sort parameters to the objects queryset. They use the ``get_search_fields``, ``get_list_filter``, and ``get_sortable_by`` methods to determine which fields to use for searching, filtering, and sorting.
-
-```python
-def get_search_results(self, objects, search_fields, search_query):
-    ...
-
-def get_filter_results(self, objects, filter_fields, filter_args):
-    ...
-
-def get_sort_results(self, objects, sort_fields, sort_args):
-    ...
-```
-
-### Filter Options and Args Methods
-The ``get_filter_options`` and ``get_filter_args`` methods are used to get the filter options and arguments for the frontend view. They use the ``get_list_filter`` method to determine which fields to use for filtering.
-
-```python
-def get_filter_options(self):
-    ...
-
-def get_filter_args(self, request_get):
-    ...
-```
-
-This class provides a comprehensive set of options and methods for customizing the frontend views for Django models
-
-
-## Overriding ModelFrontend Methods
-The ``ModelFrontend`` class methods provide a powerful way to control the behavior of the frontend configuration for a Django model. While the default methods provide a good starting point, you can override these methods in your own subclasses to provide custom functionality.
-
-Here are some examples of how you can override these methods:
-
-### Overriding the get_fields Method
-You might want to display different fields in the frontend view depending on some condition. For example, you might want to display certain fields only to authenticated users. You can accomplish this by overriding the ``get_fields`` method and adding a check for the user's authentication status.
-
-```python
-def get_fields(self):
-    if self.request.user.is_authenticated:
-        return ('field1', 'field2', 'field3')
-    else:
-        return ('field1', 'field2')
-```
-
-### Overriding the get_search_results Method
-You might want to customize the way search queries are handled. For example, you might want to perform case-insensitive searches or use a different search algorithm. You can accomplish this by overriding the ``get_search_results`` method.
-
-```python
-def get_search_results(self, objects, search_fields, search_query):
-    # Perform a case-insensitive search
-    query = Q()
-    for field in search_fields:
-        query |= Q(**{f"{field}__icontains": search_query})
-    objects = objects.filter(query)
-    return objects
-```
-
-### Overriding the get_pagination Method
-You might want to customize the number of objects displayed per page or the way pagination is handled. You can do this by overriding the ``get_pagination`` method.
-
-```python
-def get_pagination(self, request, objects):
-    # Display 50 items per page instead of the default 100
-    # The base implementation already applies order_by('pk') for unordered
-    # QuerySets — call super() or replicate that guard to avoid warnings.
-    paginator = Paginator(objects, 50)
-    objects = paginator.get_page(request.GET.get("page"))
-    return objects
-```
-
-By overriding these and other ``ModelFrontend`` methods, you can customize the frontend configuration for each Django model in your project.
-
-
-## Upgrading from v0.3.x / v0.4.0 (March 2026)
-
-If you are upgrading from the previous v0.4.0 release, review the following changes:
-
-### Breaking Changes
-
-| Change | Before | After | Action Required |
-|--------|--------|-------|-----------------|
-| Python minimum | `>=3.8` | `>=3.10` | Ensure your runtime is Python 3.10 or newer |
-| `django-bootstrap5` minimum | `>=24.3` | `>=26.2` | Run `pip install -U django-bootstrap5` |
-| Docker base image | `python:3.10-bullseye` | `python:3.12-slim` | Rebuild your Docker image |
-| Logout method | GET link | POST form | No action needed — template updated automatically |
-
-### Migration Steps
-
-1. **Upgrade Python** to 3.10 or later.
-2. **Upgrade dependencies**: `pip install -U django-fast-frontend django-bootstrap5`
-3. **Rebuild Docker image** if using Docker: `docker-compose build`
-4. **No template changes required** — `base.html` is part of the package.
-
----
-
-## Upgrading to v0.3.0
-
-If you are upgrading from v0.2.x, review the following breaking changes:
-
-### Breaking Changes
-
-| Change | Before (v0.2.x) | After (v0.3.0) | Action Required |
-|--------|-----------------|-----------------|------------------|
-| `login_required` default | `False` | `True` | Add `login_required = False` to frontends that should remain public |
-| `view_permission` default | `False` | `True` | Add `view_permission = False` if anonymous viewing was intended |
-| Form `fields` default | `"__all__"` | `()` (empty) | Explicitly set `fields` or `list_display` on every `ModelFrontend` |
-| Django minimum | `>=3.2` | `>=4.2` | Upgrade Django to 4.2+ (LTS) |
-| `queryset()` signature | `*args, **kwargs` | `request=None, *args, **kwargs` | Update any direct `queryset()` calls to pass `request` |
-
-### Migration Steps
-
-1. **Upgrade Django** to 4.2 or later:
-   ```bash
-   pip install "django>=4.2,<6.0"
-   ```
-
-2. **Update `django-fast-frontend`**:
-   ```bash
-   pip install --upgrade django-fast-frontend
-   ```
-
-3. **Audit your `ModelFrontend` subclasses**:
-   - Ensure every frontend has explicit `fields` or `list_display`
-   - Add `login_required = False` where public access is intentional
-   - Add `view_permission = False` where needed
-
-4. **Implement row-level authorization** (recommended):
-   ```python
-   class MyFrontend(frontend.ModelFrontend):
-       fields = ('name', 'email')
-
-       def get_queryset(self, request=None):
-           qs = super().get_queryset(request)
-           if request and request.user.is_authenticated:
-               return qs.filter(owner=request.user)
-           return qs.none()
-   ```
-
-5. **Set environment variables** for production:
-   ```bash
-   export DJANGO_SECRET_KEY='your-production-secret-key'
-   export DJANGO_DEBUG='False'
-   export DJANGO_ALLOWED_HOSTS='yourdomain.com,www.yourdomain.com'
-   ```
-
-6. **Test your application** thoroughly after upgrading.
+The repository also includes a full current-state specification in `SPEC.md`. This README is the practical guide. `SPEC.md` is the detailed implementation reference.
