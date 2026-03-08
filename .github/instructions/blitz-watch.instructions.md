@@ -1,14 +1,25 @@
 ---
-applyTo: "**/*.py,**/*.html,**/*.css,**/*.js,**/*.ts"
+applyTo: "**/*.py,**/*.html,**/*.css,**/*.yml"
 ---
-## Blitz Watch
+<!-- managed-by: blitz -->
 
-After changing source files, patch affected context + instruction files.
+## Role
+Passive maintenance only. Patch Blitz-managed artifacts when source changes warrant it. Not a daemon.
 
-Context: `.github/agents/context/{structure,logic,patterns,links}.md`
+## Watch Map
+Patch when: new/removed/renamed files or modules · changed public interfaces or exported APIs · architectural changes · new or removed dependencies · changed entry points or URL patterns · changed validation commands.
 
-Map: new/removed/renamed file → structure.md | changed flow/calls → logic.md | changed class/convention → patterns.md | changed import/dep/config → links.md
+Skip: whitespace-only · comment-only · minor internal refactors · test-only changes not affecting responsibilities or boundaries · `.git` · `__pycache__` · migrations · `agent-output/` · `.github/agents/**`.
 
-Do: read changed file + affected context file, make surgical row/section edits only, then patch any `.github/instructions/*.instructions.md` whose applyTo glob covers the changed file. Preserve `## Overrides` verbatim.
+## Map: source change → artifact
+- New/removed/renamed file → `agent.md` scopes table + relevant `{scope}/agent.md` key files table
+- Changed `frontend/__init__.py` exports → `frontend/agent.md` + `frontend-core.instructions.md`
+- Changed `frontend/views.py` flows → `frontend/agent.md` call chain + `frontend-core.instructions.md` arch flow
+- Changed `setup.py` version → `agent.md` + `copilot-instructions.md` + `project-config.instructions.md`
+- New/removed dependency → `agent.md` deps table + `frontend-core.instructions.md`
+- New/changed template → `frontend-templates.instructions.md` hierarchy
+- Changed `Dockerfile` / `docker-compose.yml` / `requirements.txt` → `copilot-instructions.md` commands table + `project/agent.md`
+- Changed `README.md` / `docs/` → relevant `agent.md` + `.instructions.md` knowledge sections
 
-Skip: `.gitignore`, `__pycache__`, migrations, `.github/agents/**`, whitespace-only, comments-only.
+## Surgical Rules
+Read changed file + relevant artifact. Patch only the affected row/section. Preserve `## Overrides` and `<!-- blitz:preserve -->` blocks. Never full-file rewrite.

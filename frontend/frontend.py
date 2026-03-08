@@ -7,6 +7,7 @@ from .sites import AccountFrontend
 
 class Frontend(frontend.Config):
     login_required = getattr(settings, 'FRONTEND_LOGIN_REQUIRED', True)
+    sidebar = getattr(settings, 'FRONTEND_SIDEBAR', True)
     brand = getattr(settings, 'FRONTEND_BRAND', 'Django Fast Frontend')
     logo = getattr(settings, 'FRONTEND_LOGO', 'img/django-fast-frontend-logo.png')
     css = getattr(settings, 'FRONTEND_CUSTOM_CSS', 'css/custom.css')

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="django-fast-frontend",
-    version="0.4.0",
+    version="0.4.1",
     author="Blogbeat",
     author_email="support@blogbeat.app",
     description="Turbocharge Front-End Creation with Django-Admin-Like Configuration",
@@ -19,14 +19,18 @@ setup(
     ]),
     classifiers=[
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Framework :: Django",
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.10',
     install_requires=[
         'django>=4.2',
-        'django_bootstrap5>=24.3',
+        'django_bootstrap5>=26.2',
     ],
     include_package_data=True,
 )

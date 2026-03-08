@@ -140,6 +140,7 @@ FRONTEND_CUSTOM_CSS = 'css/custom-purple.css'
 # FRONTEND_BRAND = 'Fast Frontend'
 # FRONTEND_LOGO = 'img/django-fast-frontend-logo-text.PNG'
 # FRONTEND_DESCRIPTION = ""
+# FRONTEND_SIDEBAR = True   # True = sidebar navigation; False = navbar navigation
 # FRONTEND_AUTO_URL = False
 # FRONTEND_URL = ''
 # FRONTEND_AUTHENTICATION = False

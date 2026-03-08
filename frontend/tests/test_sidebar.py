@@ -5,8 +5,10 @@ Covers:
 - Sidebar configuration storage (set_sidebar_navigation)
 - Sidebar registry building (get_sidebar_registry)
 - Model identifier normalization (class + string)
-- Fallback behavior (no config → app-based grouping)
+- Fallback behavior (no config → app-based grouping using AppConfig.verbose_name)
+- AppConfig.verbose_name as fallback group display name
 - Hide-unlisted behavior (configured → unlisted hidden)
+- FRONTEND_SIDEBAR setting (disabled → empty list)
 - Auth-aware filtering (anonymous → account links only)
 - Request-aware meta building (meta.sidebar in context)
 - Accounts auto-append behavior
@@ -120,6 +122,18 @@ class TestSidebarRegistryFallback:
         assert 'author' in all_items
         assert 'people' in all_items
 
+    def test_fallback_uses_app_verbose_name(self):
+        """Fallback grouping should use AppConfig.verbose_name as the group display name."""
+        site._sidebar_navigation = None
+        sidebar = site.get_sidebar_registry()
+        group_names = [g['group'] for g in sidebar]
+        # app has verbose_name='Content', app2 has verbose_name='Directory'
+        assert 'Content' in group_names
+        assert 'Directory' in group_names
+        # Should NOT expose raw app labels
+        assert 'app' not in group_names
+        assert 'app2' not in group_names
+
 
 # ---------------------------------------------------------------------------
 # Sidebar registry builder — configured (hide unlisted)
@@ -141,7 +155,6 @@ class TestSidebarRegistryConfigured:
         structure = {"Group A": [People], "Group B": [Author]}
         site.set_sidebar_navigation(structure)
         sidebar = site.get_sidebar_registry()
-        # Exclude the auto-appended accounts group
         model_groups = [g for g in sidebar if g['group'] != 'Account']
         assert len(model_groups) == 2
         assert model_groups[0]['group'] == 'Group A'
@@ -193,33 +206,47 @@ class TestSidebarRegistryConfigured:
 
 @pytest.mark.django_db
 class TestSidebarAccountsAutoAppend:
-    """Account links should be auto-appended when accounts are enabled."""
+    """Account links should never appear in the sidebar (they live on the navbar account icon)."""
 
     @pytest.fixture(autouse=True)
     def reset_sidebar(self):
         yield
         site._sidebar_navigation = None
 
-    def test_accounts_appended_when_enabled(self):
-        """When accounts are registered, sidebar should include Account group."""
+    def test_accounts_not_in_sidebar_when_enabled(self):
+        """When accounts are registered, sidebar must NOT include an Account group."""
         sidebar = site.get_sidebar_registry()
         account_groups = [g for g in sidebar if g['group'] == 'Account']
-        if 'accounts' in site._registry:
-            assert len(account_groups) == 1
-            items = account_groups[0]['items']
-            item_names = [i['name'] for i in items]
-            assert 'login' in item_names
-            assert 'signup' in item_names
+        assert len(account_groups) == 0
 
-    def test_accounts_appended_even_when_not_in_config(self):
-        """Even if user doesn't include accounts in their config, they appear."""
+    def test_accounts_not_in_sidebar_even_when_not_in_config(self):
+        """Even with a configured sidebar, no Account group should appear."""
         from app.models import Author
         structure = {"Writers": [Author]}
         site.set_sidebar_navigation(structure)
         sidebar = site.get_sidebar_registry()
         account_groups = [g for g in sidebar if g['group'] == 'Account']
-        if 'accounts' in site._registry:
-            assert len(account_groups) == 1
+        assert len(account_groups) == 0
+
+
+# ---------------------------------------------------------------------------
+# FRONTEND_SIDEBAR setting
+# ---------------------------------------------------------------------------
+
+class TestFrontendSidebarSetting:
+    """When Config.sidebar is False, get_sidebar_registry must return an empty list."""
+
+    def test_sidebar_disabled_returns_empty_list(self):
+        """get_sidebar_registry() returns [] when Config.sidebar is False."""
+        original_global_config = site.global_config
+        mock_config = MagicMock()
+        mock_config.sidebar = False
+        site.global_config = mock_config
+        try:
+            result = site.get_sidebar_registry()
+            assert result == []
+        finally:
+            site.global_config = original_global_config
 
 
 # ---------------------------------------------------------------------------

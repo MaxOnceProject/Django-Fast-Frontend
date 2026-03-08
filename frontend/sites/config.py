@@ -11,6 +11,7 @@ class Config(FrontendAbstract):
     """
 
     login_required = True
+    sidebar = True
     brand = str()
     logo = str()
     css = str()

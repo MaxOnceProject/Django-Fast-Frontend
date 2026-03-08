@@ -310,6 +310,7 @@ class FrontendLogoutView(auth_views.LogoutView, FrontendAbstractView):
     """
 
     title = 'Logout'
+    next_page = '/'
 
 class FrontendPasswordChangeView(FrontendAbstractView, auth_views.PasswordChangeView):
     """

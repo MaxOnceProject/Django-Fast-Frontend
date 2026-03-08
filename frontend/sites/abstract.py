@@ -175,6 +175,11 @@ class FrontendSiteAbstract(ABC):
 
         sidebar = []
 
+        if not self.global_config:
+            self.get_global_config()
+        if not getattr(self.global_config, 'sidebar', True):
+            return sidebar
+
         if not hide_models:
             if self._sidebar_navigation is not None:
                 # Configured mode: respect group order, hide unlisted
@@ -221,17 +226,6 @@ class FrontendSiteAbstract(ABC):
                         'description': description,
                     })
                 sidebar.extend(app_groups.values())
-
-        # Auto-append account links when accounts are registered
-        if 'accounts' in self._registry:
-            sidebar.append({
-                'group': 'Account',
-                'items': [
-                    {'name': 'login', 'verbose_name': 'Login', 'description': 'Login', 'url_name': 'account_login'},
-                    {'name': 'signup', 'verbose_name': 'Sign Up', 'description': 'Sign Up', 'url_name': 'account_signup'},
-                    {'name': 'password_change', 'verbose_name': 'Change Password', 'description': 'Change Password', 'url_name': 'account_password_change'},
-                ],
-            })
 
         return sidebar
 

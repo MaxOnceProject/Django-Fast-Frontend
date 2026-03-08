@@ -136,6 +136,8 @@ class ModelFrontend(FrontendAbstract, NotImplementedMixin):
 
         list_per_page = self.get_list_per_page()
 
+        if hasattr(objects, 'ordered') and not objects.ordered:
+            objects = objects.order_by('pk')
         paginator = Paginator(objects, list_per_page)  # Show x items per page
         objects = paginator.get_page(request.GET.get("page"))
         return objects

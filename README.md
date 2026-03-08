@@ -1,9 +1,9 @@
 # Django Fast Frontend 
 ### *Turbocharge Front-End Creation with Django-Admin-Like Configuration*
 
-![Version](https://img.shields.io/badge/version-0.4.0-blue)
-![Django](https://img.shields.io/badge/django-%3E%3D4.2-green)
-![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)
+![Version](https://img.shields.io/badge/version-0.4.1-blue)
+![Django](https://img.shields.io/badge/django-%3E%3D5.2-green)
+![Python](https://img.shields.io/badge/python-%3E%3D3.10-blue)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
 ## Overview
@@ -13,10 +13,25 @@ Key highlights:
 - **Sidebar navigation** — persistent left-side navigation for easy model access
 - **Secure by default** — authentication required, explicit field declarations, safe redirects
 - **Responsive design** — optimized for desktop, tablet, and mobile devices
-- **Bootstrap 5.3** — modern UI with CDN resources protected by Subresource Integrity (SRI)
+- **Bootstrap 5.3.8** — modern UI with CDN resources protected by Subresource Integrity (SRI)
 - **Extensible** — override querysets, permissions, actions, and templates
   
 _Note: Django Fast Frontend is a complementary package to Django´s powerful MVT based frontend feature. If you require e.g. static pages for your website you can easily add them to your project using the original Django frontend feature._
+
+## What's New — March 2026 Maintenance Release
+
+### Dependency & Runtime Updates
+- **Python 3.10+** is now the minimum supported version (`python_requires='>=3.10'`)
+- **Django 5.2** is now the minimum for the demo / test harness (`django>=5.2,<6.0`); the library itself stays flexible at `django>=4.2`
+- **Bootstrap 5.3.8** CSS + JS (was 5.3.3) with updated SRI hashes
+- **Bootstrap Icons 1.13.1** (was 1.11.3) with updated SRI hash
+- `django-bootstrap5>=26.2`, `pytest>=9.0`, `pytest-factoryboy>=2.8.1`, `pytest-django>=4.12`
+- Docker base image upgraded from `python:3.10-bullseye` → `python:3.12-slim`
+- `setuptools` pin removed; `migrate` moved from Docker build time to container start-up
+
+### Bug Fixes
+- **Logout broken on Django 5.x** — Django 5.x `LogoutView` rejects GET requests (405). The navbar logout link has been replaced with a CSRF-protected POST form. `FrontendLogoutView` now also sets `next_page='/'` so users are redirected to the homepage after signing out.
+- **`UnorderedObjectListWarning` from Paginator** — `get_pagination` now calls `order_by('pk')` on any unordered QuerySet, eliminating the warning without affecting QuerySets that already declare an ordering.
 
 ## What's New in v0.4.0
 
@@ -129,6 +144,7 @@ FRONTEND_BRAND = 'Fast Frontend'  # Brand name
 FRONTEND_LOGO = 'img/django-fast-frontend-logo-text.PNG'  # Logo file path
 FRONTEND_DESCRIPTION = "Powerful and interesting description for your frontend"  # Description for your frontend
 FRONTEND_AUTHENTICATION = True  # Whether authentication is required in general
+FRONTEND_SIDEBAR = True  # Show sidebar navigation (True, default) or navbar-only mode (False)
 
 # ...
 ```
@@ -377,9 +393,28 @@ LOGOUT_REDIRECT_URL = '/'
 
 Django Fast Frontend includes a persistent left-side navigation sidebar that lets users quickly switch between model frontends from any page. The sidebar supports custom grouping and ordering.
 
+### Enabling / Disabling the Sidebar
+
+The sidebar is **enabled by default**. To switch to navbar-only navigation (all app dropdowns appear in the top navbar instead), add this to your `settings.py`:
+
+```python
+FRONTEND_SIDEBAR = False  # disable sidebar; show app dropdowns in navbar
+```
+
 ### Default Behavior (No Configuration)
 
-If you do not configure the sidebar, it automatically displays all registered model frontends grouped by their Django app. Account links (Login, Sign Up, Change Password) are auto-appended when authentication is enabled.
+If you do not configure the sidebar, it automatically displays all registered model frontends grouped by Django app. The **group display name** comes from the app's `AppConfig.verbose_name`. Set it in your `apps.py` to control the heading users see:
+
+```python
+# myapp/apps.py
+from django.apps import AppConfig
+
+class MyAppConfig(AppConfig):
+    name = 'myapp'
+    verbose_name = 'Content'  # shown as the sidebar group heading
+```
+
+**Account links** (Login, Sign Up, Change Password) always appear in the **navbar account icon** on the top right, not in the sidebar.
 
 ### Configuring Groups and Order
 
@@ -417,11 +452,11 @@ When sidebar navigation is configured, **only the listed models appear**. Any re
 
 ### Account Links
 
-Account links (Login, Sign Up, Change Password) are **always auto-appended** to the sidebar when authentication is enabled — you do not need to include them in your configuration.
+Account links (Login, Sign Up, Change Password) appear in the **navbar account icon** (top-right dropdown), not in the sidebar. You do not need to include them in your sidebar configuration.
 
 ### Auth-Aware Filtering
 
-When authentication is required (``login_required = True`` and ``authentication = True``), anonymous users see only the account links in the sidebar. Model links become visible after login.
+When authentication is required (``login_required = True`` and ``authentication = True``), the sidebar is empty for anonymous users — model links become visible only after login.
 
 ### Responsive Layout
 
@@ -692,6 +727,8 @@ def queryset(self, request=None, *args, **kwargs):
 ### Pagination Method
 The ``get_pagination`` method gets a paginator for the objects and returns the paginated objects. It uses the ``get_list_per_page`` method to determine how many objects to include on each page.
 
+If the provided QuerySet has no ordering (i.e. ``objects.ordered`` is ``False``), ``get_pagination`` automatically applies ``order_by('pk')`` to ensure consistent page results and suppress Django's ``UnorderedObjectListWarning``.
+
 ```python
 def get_pagination(self, request, objects):
     ...
@@ -768,6 +805,8 @@ You might want to customize the number of objects displayed per page or the way 
 ```python
 def get_pagination(self, request, objects):
     # Display 50 items per page instead of the default 100
+    # The base implementation already applies order_by('pk') for unordered
+    # QuerySets — call super() or replicate that guard to avoid warnings.
     paginator = Paginator(objects, 50)
     objects = paginator.get_page(request.GET.get("page"))
     return objects
@@ -775,6 +814,28 @@ def get_pagination(self, request, objects):
 
 By overriding these and other ``ModelFrontend`` methods, you can customize the frontend configuration for each Django model in your project.
 
+
+## Upgrading from v0.3.x / v0.4.0 (March 2026)
+
+If you are upgrading from the previous v0.4.0 release, review the following changes:
+
+### Breaking Changes
+
+| Change | Before | After | Action Required |
+|--------|--------|-------|-----------------|
+| Python minimum | `>=3.8` | `>=3.10` | Ensure your runtime is Python 3.10 or newer |
+| `django-bootstrap5` minimum | `>=24.3` | `>=26.2` | Run `pip install -U django-bootstrap5` |
+| Docker base image | `python:3.10-bullseye` | `python:3.12-slim` | Rebuild your Docker image |
+| Logout method | GET link | POST form | No action needed — template updated automatically |
+
+### Migration Steps
+
+1. **Upgrade Python** to 3.10 or later.
+2. **Upgrade dependencies**: `pip install -U django-fast-frontend django-bootstrap5`
+3. **Rebuild Docker image** if using Docker: `docker-compose build`
+4. **No template changes required** — `base.html` is part of the package.
+
+---
 
 ## Upgrading to v0.3.0
 

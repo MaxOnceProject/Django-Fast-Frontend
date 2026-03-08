@@ -1,18 +1,17 @@
+<!-- managed-by: blitz -->
 # Copilot Instructions — Django Fast Frontend
 
 ## Context Acceleration
-Pre-analyzed context files exist — read these BEFORE exploring source code:
-- `.github/agents/context/structure.md` — file tree, key files with line counts, entry points, commands
-- `.github/agents/context/logic.md` — request flows, call chains, error paths, silent failures
-- `.github/agents/context/patterns.md` — class hierarchies, registration, naming, DO/NEVER rules, template contracts, boilerplate
-- `.github/agents/context/links.md` — import graph, external packages, config keys, env vars, API surface
+**STOP — read `agent.md` files BEFORE exploring source code.**
+agent.md files contain 80% of the knowledge you need. Source exploration is for the remaining 20%.
+- `agent.md` — scope map, architecture, dependencies, API reference
+- `{scope}/agent.md` — key files, call chains, API defaults, change guidance
 
-**Lookup**: Need file locations/roles → structure | Need call chains/error paths → logic | Need conventions/how-to → patterns | Need deps/config/APIs → links
-
-These cover ~95% of codebase questions. Only read source files when you need exact implementation details not in the context files. Do NOT re-explore the codebase with search tools for information already covered above.
+Only read source files when `agent.md` + auto-loaded `.instructions.md` don't answer your question.
 
 ## Project
-Django Fast Frontend is a PyPI-installable Django library that lets developers create admin-like CRUD frontend interfaces for Django models using declarative configuration classes. It mirrors Django Admin's API pattern (`ModelAdmin` → `ModelFrontend`) but renders a Bootstrap 5 frontend instead of the admin panel.
+Django Fast Frontend — PyPI library (`django-fast-frontend` v0.4.1) for declarative admin-like CRUD interfaces.
+Mirrors Django Admin (`ModelAdmin` → `ModelFrontend`) but renders Bootstrap 5.
 
 ## Stack
 | Aspect | Value |
@@ -22,65 +21,35 @@ Django Fast Frontend is a PyPI-installable Django library that lets developers c
 | UI | django_bootstrap5 |
 | Tests | pytest + pytest-django + factory-boy |
 | Container | Docker + docker-compose |
-| Package | `django-fast-frontend` v0.3.0 on PyPI |
 
-## Architecture
-```
-HTTP Request → project/urls.py → frontend.site.urls / frontend.accounts.urls
-  → views.FrontendModelView.get/post(app_name, model_name, action, id)
-    → site.get_model_config(model) → ModelFrontend instance
-      → queryset / form / search / filter / sort / pagination
-        → site.http_response(request, context, template) → render HTML
-```
-Registration (startup): `FrontendConfig.ready()` → `site.autodiscover_modules()` → imports `{app}/frontend.py` → `@frontend.register(Model)` → `site._registry[model]`
-
-## Directory Map
-```
-frontend/           Core library (the PyPI package)
-  sites/            Site registry, ModelFrontend, Config, decorators
-  templates/        HTML templates (base, site, home, partials)
-  templatetags/     Custom Django template filters
-app/, app2/         Demo/example apps using the library
-project/            Django project config (settings, urls, wsgi)
-```
+## Scopes
+| Scope | Path | agent.md |
+|---|---|---|
+| `frontend-core` | `frontend/` | `frontend/agent.md` |
+| `demo-app` | `app/` | `app/agent.md` |
+| `demo-app-minimal` | `app2/` | `app2/agent.md` |
+| `project-config` | `project/`, `setup.py`, `Dockerfile` | `project/agent.md` |
+| `frontend-templates` | `frontend/templates/` | — |
 
 ## Coding Rules
-- Always declare `fields` explicitly on `ModelFrontend` — never use `"__all__"`
-- Use `@frontend.register(Model)` decorator for model registration
-- Use `get_queryset(request)` when overriding querysets for row-level authorization
-- Validate action names against `toolbar_button` or `inline_button` before dispatch
-- Use `_safe_redirect()` for POST redirects — never trust raw `HTTP_REFERER`
-- Mark tests with `@pytest.mark.django_db` when accessing the database
-- Follow naming: `{Model}Frontend` for classes, `{app}/frontend.py` for config files
-- Keep `ModelFrontend` subclasses declarative — logic goes in overridden methods
-
-## Quick Start: Adding a New Model Frontend
-1. Create model in `{app}/models.py`
-2. Create/edit `{app}/frontend.py`:
-   ```python
-   import frontend
-   from {app}.models import MyModel
-
-   @frontend.register(MyModel)
-   class MyModelFrontend(frontend.ModelFrontend):
-       fields = ('field1', 'field2')
-       list_display = ('field1', 'field2')
-   ```
-3. Ensure app is in `INSTALLED_APPS` (autodiscovery requires it)
-4. `python manage.py makemigrations {app}` + `python manage.py migrate`
-5. Add tests in `{app}/tests/test_frontend.py` with `@pytest.mark.django_db`
+- **DO** declare `fields` explicitly on `ModelFrontend` — never `"__all__"`
+- **DO** use `@frontend.register(Model)` decorator for registration
+- **DO** use `get_queryset(request)` override for row-level authorization
+- **DO** whitelist actions via `toolbar_button` / `inline_button` before `getattr` dispatch
+- **DO** use `_safe_redirect()` for all POST redirects — never trust raw `HTTP_REFERER`
+- **DO** mark DB-touching tests with `@pytest.mark.django_db`
+- **NEVER** commit secrets, tokens, passwords, or API keys in source files
 
 ## Commands
-| Task | Command |
-|---|---|
-| Run dev server | `docker-compose up` or `python manage.py runserver` |
-| Run all tests | `python -m pytest` |
-| Run specific tests | `python -m pytest app/tests/ -v` |
-| Migrate DB | `python manage.py migrate` |
-| Build package | `python setup.py sdist bdist_wheel` |
-
-## Safety
-- Never include secrets, API keys, tokens, passwords, or customer data
-- Never use `fields = "__all__"` — always declare explicit field lists
-- Always check existing patterns before creating new abstractions
-- When unsure about data classification or security boundaries, ask
+| # | Task | Command | Source |
+|---|---|---|---|
+| 1 | Setup (Docker) | `docker-compose up --build` | Dockerfile, docker-compose.yml |
+| 2 | Setup (local) | `pip install -r requirements.txt && pip install -e .` | requirements.txt, setup.py |
+| 3 | Dev server | `docker-compose up` | docker-compose.yml |
+| 4 | Run all tests | `docker-compose run --rm app python -m pytest` | conftest.py |
+| 4a | Run all tests (local) | `python -m pytest` | conftest.py |
+| 5 | Run single test | `docker-compose run --rm app python -m pytest path/to/test.py -v` | conftest.py |
+| 6 | Migrate | `python manage.py migrate` | Dockerfile |
+| 7 | Build package | `python setup.py sdist bdist_wheel` | setup.py |
+| 8 | Access demo | `docker-compose up` → `http://localhost:8000` | docker-compose.yml |
+| 9 | Check errors | `python -m pytest --tb=short` | conftest.py |
