@@ -13,6 +13,8 @@ Core library (`frontend/`) distributed as `django-fast-frontend` on PyPI. Change
 - **DO** keep `ModelFrontend` declarative — attributes + overrideable methods, no class-level logic
 - **DO** use `get_queryset(request)` as the row-level authorization override point
 - **DO** call `super().ready()` before `autodiscover_modules()` in `FrontendConfig.ready()`
+- **DO** keep `FrontendLogoutView` POST-only with `next_page='/'` to match Django 5.x behaviour and the logout regression tests
+- **DO** preserve the `order_by('pk')` fallback in `ModelFrontend.get_pagination()` for unordered QuerySets
 - **DO** add a security test to `frontend/tests/test_security.py` for any new action dispatch path
 - **NEVER** mutate `site._registry` directly — use `site.register()` or `@register`
 - **NEVER** bypass `_check_global_auth()` or `_check_model_auth()` in views

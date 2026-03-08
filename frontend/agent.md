@@ -5,7 +5,8 @@ See `/agent.md` for project scope and architecture.
 ## Responsibilities
 Core library distributed as PyPI package `django-fast-frontend`. Provides: site registry, `ModelFrontend`
 extension point, HTTP views for list/detail/CRUD, form generation, accounts (login/signup/password),
-URL routing, and templatetags. All subdirectories here are distributed together.
+URL routing, and templatetags. Also owns the Django 5.x logout compatibility flow and unordered
+pagination fallback. All subdirectories here are distributed together.
 
 ## Boundaries
 - **May change**: `ModelFrontend` attributes/methods, template HTML, CSS, search/filter/sort, form logic
@@ -19,17 +20,19 @@ URL routing, and templatetags. All subdirectories here are distributed together.
 | `frontend/frontend.py` | Default site config; registers `Config` + optionally `AccountFrontend` at import (20 lines) | `Frontend` |
 | `frontend/accounts.py` | Account URL site; provides password reset flow URLs (15 lines) | `AccountSite`, `site` |
 | `frontend/sites/abstract.py` | Base registry + rendering (266 lines) | `FrontendAbstract`, `FrontendSiteAbstract.__init__()`, `.urls`, `.register()`, `.unregister()`, `.autodiscover_modules()`, `.get_global_config()`, `.get_navbar_registry()`, `.set_sidebar_navigation()`, `.get_sidebar_registry()`, `.get_site_meta()`, `.http_response()`, `_resolve_model_identifier()` |
-| `frontend/sites/model.py` | ModelFrontend base class; filter/sort/search/pagination (191 lines) | `ModelFrontend.get_queryset()`, `.queryset()`, `.get_form()`, `.get_pagination()`, `.get_search_results()`, `.get_filter_results()`, `.get_sort_results()`, `.get_filter_options()`, `.get_filter_args()`, `.has_*_permission()` |
+| `frontend/sites/model.py` | ModelFrontend base class; filter/sort/search/pagination with unordered-QuerySet fallback (191 lines) | `ModelFrontend.get_queryset()`, `.queryset()`, `.get_form()`, `.get_pagination()`, `.get_search_results()`, `.get_filter_results()`, `.get_sort_results()`, `.get_filter_options()`, `.get_filter_args()`, `.has_*_permission()` |
 | `frontend/sites/site.py` | Singleton registry; `FRONTEND_SITE_CLASS` override support (79 lines) | `FrontendSite.register_config()`, `.register_accounts()`, `.get_model_config()`, `.get_navbar_registry_by_app()`, `.http_home_response()`, `.http_model_response()`, `.http_login_redirect()`, `.get_cards()`, `site` |
 | `frontend/sites/config.py` | Global site config (27 lines) | `Config`, `Config.sidebar` attribute, `Config.authentication` property |
 | `frontend/sites/account.py` | AccountFrontend base class (12 lines) | `AccountFrontend` |
 | `frontend/sites/decorators.py` | Registration decorator (21 lines) | `register` |
 | `frontend/sites/mixin.py` | NotImplemented guard for unsupported Admin attrs (243 lines) | `NotImplementedMixin` — 30+ properties/methods raising `NotImplementedError` |
-| `frontend/views.py` | All HTTP views incl. password reset/change (394 lines) | `_safe_redirect()`, `FrontendModelView._check_global_auth()`, `._check_model_auth()`, `.get()`, `.post()`, `FrontendAbstractView`, `FrontendLoginView`, `FrontendSignUpView.post()`, `FrontendLogoutView`, `FrontendPassword*View` (6 views) |
+| `frontend/views.py` | All HTTP views incl. safe redirects, logout POST compatibility, and password reset/change (394 lines) | `_safe_redirect()`, `favicon_view()`, `FrontendModelView._check_global_auth()`, `._check_model_auth()`, `.get()`, `.post()`, `FrontendAbstractView`, `FrontendLoginView`, `FrontendSignUpView.post()`, `FrontendLogoutView`, `FrontendPassword*View` (6 views) |
 | `frontend/forms.py` | Dynamic ModelForm factory (45 lines) | `FrontendModelForm`, `generate_form_for_model()` |
 | `frontend/apps.py` | AppConfig + autodiscovery + `FRONTEND_AUTO_URL` injection (47 lines) | `FrontendConfig.ready()` |
 | `frontend/urls.py` | URL patterns incl. full password reset flow (26 lines) | `urlpatterns`, `urlpatterns_account` |
 | `frontend/templatetags/django_fast_frontend.py` | Custom template filters (14 lines) | `split`, `label` filters |
+| `frontend/tests/test_logout.py` | Logout regression tests for POST-only flow, redirect target, and base template form | `TestLogoutView`, `TestLogoutViewNextPage`, `TestLogoutTemplate` |
+| `frontend/tests/test_pagination.py` | Pagination regression tests for unordered QuerySets and `?page=` handling | `TestGetPaginationOrdering` |
 | `frontend/tests/test_security.py` | Security unit tests (407 lines) | `TestFormFieldSafety`, `TestActionDispatchSafety`, `TestOpenRedirectPrevention`, `TestObjectLevelAuthorization`, `TestAuthNormalization`, `TestTemplateSecurity`, `TestPackaging`, `TestPostFallbackReturn` |
 | `frontend/tests/test_sidebar.py` | Sidebar unit tests | `TestSetSidebarNavigation`, `TestResolveModelIdentifier`, `TestSidebarRegistryFallback`, `TestSidebarRegistryConfigured`, `TestSidebarAccountsAutoAppend`, `TestFrontendSidebarSetting`, `TestSidebarAuthFiltering`, `TestMetaSidebar` |
 
@@ -37,7 +40,7 @@ URL routing, and templatetags. All subdirectories here are distributed together.
 | Attribute | Type | Default | Description |
 |---|---|---|---|
 | login_required | bool | True | Require authentication |
-| fields | tuple | () | Form fields (REQUIRED — never `"__all__"`) |
+| fields | tuple | follows `list_display` (default `()`) | Form fields; declare explicitly for new subclasses and never use `"__all__"` |
 | list_display | tuple | () | Columns in list view |
 | search_fields | tuple | () | Searchable fields |
 | list_filter | tuple | () | Filterable fields |
@@ -71,10 +74,12 @@ POST request → FrontendModelView.post()
 
 ## Dependencies
 - Internal: `frontend/sites/` ← `frontend/views.py` ← `frontend/urls.py` ← `frontend/__init__.py`
-- External: `django>=4.2`, `django_bootstrap5>=24.3`
+- External: `django>=4.2`, `django_bootstrap5>=26.2`
 
 ## Change Guidance
 - New `ModelFrontend` attribute → `sites/model.py` class body
 - New URL pattern → `frontend/urls.py`
 - New view → extend in `frontend/views.py` + add corresponding security test
+- Logout behavior change → update `frontend/views.py`, `frontend/templates/frontend/base.html`, and `frontend/tests/test_logout.py`
+- Pagination behavior change → update `frontend/sites/model.py` and `frontend/tests/test_pagination.py`
 - Changed public export → `frontend/__init__.py`

@@ -29,4 +29,5 @@ python -m pytest app2/ -v
 
 ## Gotchas
 - `app/tests/test_frontend.py` uses pytest-style `assert`; `frontend/tests/test_security.py` uses `unittest`-style `self.assert*` — do not mix styles within a file
+- `app2/frontend.py` is an intentionally empty historical example. If you expand it beyond pass-through registration, declare `fields` or `list_display` explicitly before adding forms or actions
 - Sidebar navigation groups are derived automatically from `AppConfig.verbose_name` — `app` uses `'Content'`, `app2` uses `'Directory'`. To customise group order or hide models, call `frontend.site.set_sidebar_navigation()` in any frontend module loaded during autodiscovery

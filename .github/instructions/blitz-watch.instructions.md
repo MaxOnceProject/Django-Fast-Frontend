@@ -1,5 +1,5 @@
 ---
-applyTo: "**/*.py,**/*.html,**/*.css,**/*.yml"
+applyTo: "**/*.py,**/*.html,**/*.css,**/*.yml,**/*.md,Dockerfile,requirements.txt"
 ---
 <!-- managed-by: blitz -->
 
@@ -7,7 +7,7 @@ applyTo: "**/*.py,**/*.html,**/*.css,**/*.yml"
 Passive maintenance only. Patch Blitz-managed artifacts when source changes warrant it. Not a daemon.
 
 ## Watch Map
-Patch when: new/removed/renamed files or modules · changed public interfaces or exported APIs · architectural changes · new or removed dependencies · changed entry points or URL patterns · changed validation commands.
+Patch when: new/removed/renamed files or modules · changed public interfaces or exported APIs · changed key-method signatures listed in Key Files tables · architectural changes · new or removed dependencies · changed entry points or URL patterns · changed validation commands · changed README or workflow directives.
 
 Skip: whitespace-only · comment-only · minor internal refactors · test-only changes not affecting responsibilities or boundaries · `.git` · `__pycache__` · migrations · `agent-output/` · `.github/agents/**`.
 
@@ -15,8 +15,9 @@ Skip: whitespace-only · comment-only · minor internal refactors · test-only c
 - New/removed/renamed file → `agent.md` scopes table + relevant `{scope}/agent.md` key files table
 - Changed `frontend/__init__.py` exports → `frontend/agent.md` + `frontend-core.instructions.md`
 - Changed `frontend/views.py` flows → `frontend/agent.md` call chain + `frontend-core.instructions.md` arch flow
+- Changed `frontend/sites/model.py` pagination or defaults → `frontend/agent.md` attributes/change guidance + `frontend-core.instructions.md`
 - Changed `setup.py` version → `agent.md` + `copilot-instructions.md` + `project-config.instructions.md`
-- New/removed dependency → `agent.md` deps table + `frontend-core.instructions.md`
+- New/removed dependency → `agent.md` deps table + `project/agent.md` + `frontend-core.instructions.md`
 - New/changed template → `frontend-templates.instructions.md` hierarchy
 - Changed `Dockerfile` / `docker-compose.yml` / `requirements.txt` → `copilot-instructions.md` commands table + `project/agent.md`
 - Changed `README.md` / `docs/` → relevant `agent.md` + `.instructions.md` knowledge sections

@@ -39,22 +39,19 @@ Django project config, packaging, deployment, and test setup. Dev/demo harness o
 ## Common Tasks
 - **Add FRONTEND_* setting**: add to `project/settings.py`
 - **Bump version**: update `setup.py` + `agent.md` + `copilot-instructions.md`
+- **Change runtime/deps**: sync `README.md`, `setup.py`, `requirements.txt`, `Dockerfile`, and the Blitz-managed root/project artifacts
 
 ## Testing
 ```bash
 docker-compose run --rm app python -m pytest                      # full suite via Docker (preferred)
 docker-compose run --rm app python -m pytest path/to/test.py -v  # single file via Docker
+docker-compose run --rm app python manage.py migrate             # migrations via Docker
 python -m pytest                                                  # full suite (local env)
-docker-compose up                                                 # dev server on port 8000
 python manage.py migrate                                          # apply migrations
+docker-compose up                                                 # dev server on port 8000 (also runs migrate on start)
 ```
 
-## Test Results (last run: 2026-03-08)
-- **54 passed**, 0 warnings in 3.01s
-- Python 3.12.13 | pytest-9.0.2 | Django 5.2.12
-- Platform: linux (container)
-- Suites: `app/tests/test_frontend.py`, `frontend/tests/test_security.py`, `frontend/tests/test_sidebar.py`
-
 ## Gotchas
+- `Dockerfile` no longer runs `migrate` at build time; `docker-compose.yml` runs migrations on container start [verified]
 - `DJANGO_ENVIRONMENT` env var is set in `Dockerfile`/`docker-compose.yml` but **not read** in `settings.py` [potential dead code]
 - `FRONTEND_AUTO_URL` in `settings.py` dynamically appends frontend URLs at startup — conflicts if URL patterns already include `frontend.site.urls`

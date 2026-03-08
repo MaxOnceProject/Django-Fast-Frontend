@@ -44,8 +44,10 @@ Load with `{% load django_fast_frontend %}`. Defined in `frontend/templatetags/d
 - **DO** extend `frontend/base.html` for all frontend pages
 - **DO** use `{% load django_fast_frontend %}` before using custom filters
 - **DO** use `django_bootstrap5` tags for form rendering — do not write raw Bootstrap HTML for forms
+- **DO** keep logout in `frontend/base.html` as a CSRF-protected `POST` form targeting `account_logout`
 - **NEVER** hardcode brand/logo/CSS values in templates — always use `{{ meta.* }}` context vars
 - **NEVER** duplicate sidebar/navbar HTML — the base template owns it
+- **NEVER** render logout as a plain GET anchor — Django 5.x `LogoutView` rejects GET requests
 
 ## Testing
 Templates are covered by integration tests in `app/tests/test_frontend.py`. Check response content with `assert b'Expected text' in response.content`.

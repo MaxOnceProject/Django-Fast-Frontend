@@ -11,16 +11,16 @@ Only read source files when `agent.md` + auto-loaded `.instructions.md` don't an
 
 ## Project
 Django Fast Frontend — PyPI library (`django-fast-frontend` v0.4.1) for declarative admin-like CRUD interfaces.
-Mirrors Django Admin (`ModelAdmin` → `ModelFrontend`) but renders Bootstrap 5.
+Mirrors Django Admin (`ModelAdmin` → `ModelFrontend`) but renders Bootstrap 5. Package minimums are Django 4.2+ / Python 3.10+; the demo harness currently targets Django 5.2 on Python 3.12 Docker.
 
 ## Stack
 | Aspect | Value |
 |---|---|
-| Language | Python 3.8+ |
-| Framework | Django 4.2+ |
-| UI | django_bootstrap5 |
-| Tests | pytest + pytest-django + factory-boy |
-| Container | Docker + docker-compose |
+| Language | Python 3.10+ |
+| Framework | Django 4.2+ library, Django 5.2+ demo harness |
+| UI | django_bootstrap5>=26.2 |
+| Tests | pytest>=9.0 + pytest-django>=4.12 + pytest-factoryboy>=2.8.1 |
+| Container | Docker + docker-compose (Python 3.12-slim image) |
 
 ## Scopes
 | Scope | Path | agent.md |
@@ -28,7 +28,7 @@ Mirrors Django Admin (`ModelAdmin` → `ModelFrontend`) but renders Bootstrap 5.
 | `frontend-core` | `frontend/` | `frontend/agent.md` |
 | `demo-app` | `app/` | `app/agent.md` |
 | `demo-app-minimal` | `app2/` | `app2/agent.md` |
-| `project-config` | `project/`, `setup.py`, `Dockerfile` | `project/agent.md` |
+| `project-config` | `project/`, `manage.py`, `setup.py`, `requirements.txt`, `Dockerfile`, `docker-compose.yml` | `project/agent.md` |
 | `frontend-templates` | `frontend/templates/` | — |
 
 ## Coding Rules
@@ -49,7 +49,8 @@ Mirrors Django Admin (`ModelAdmin` → `ModelFrontend`) but renders Bootstrap 5.
 | 4 | Run all tests | `docker-compose run --rm app python -m pytest` | conftest.py |
 | 4a | Run all tests (local) | `python -m pytest` | conftest.py |
 | 5 | Run single test | `docker-compose run --rm app python -m pytest path/to/test.py -v` | conftest.py |
-| 6 | Migrate | `python manage.py migrate` | Dockerfile |
+| 6 | Migrate (Docker) | `docker-compose run --rm app python manage.py migrate` | docker-compose.yml |
+| 6a | Migrate (local) | `python manage.py migrate` | manage.py |
 | 7 | Build package | `python setup.py sdist bdist_wheel` | setup.py |
 | 8 | Access demo | `docker-compose up` → `http://localhost:8000` | docker-compose.yml |
 | 9 | Check errors | `python -m pytest --tb=short` | conftest.py |

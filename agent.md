@@ -4,7 +4,7 @@
 ## Project
 PyPI-installable Django library for admin-like CRUD frontend interfaces. Mirrors Django Admin API
 (`ModelAdmin` → `ModelFrontend`) but renders a Bootstrap 5 frontend instead of the admin panel.
-Version: 0.4.1 | Python 3.8+ | Django 4.2+ | Tests: pytest + pytest-django + factory-boy
+Version: 0.4.1 | Python 3.10+ package / Python 3.12 Docker image | Django 4.2+ library / 5.2+ demo harness | Tests: pytest + pytest-django + pytest-factoryboy
 
 ## Reading Order
 1. **This file** — scope map, boundaries, architecture
@@ -19,7 +19,7 @@ Version: 0.4.1 | Python 3.8+ | Django 4.2+ | Tests: pytest + pytest-django + fac
 | `frontend-core` | `frontend/` | Core library: registry, views, forms, accounts, templatetags | `frontend/agent.md` |
 | `demo-app` | `app/` | Full-featured demo app with integration tests | `app/agent.md` |
 | `demo-app-minimal` | `app2/` | Minimal pass-through demo app | `app2/agent.md` |
-| `project-config` | `project/`, `setup.py`, `Dockerfile`, `conftest.py` | Django project config, packaging, deployment | `project/agent.md` |
+| `project-config` | `project/`, `manage.py`, `setup.py`, `requirements.txt`, `Dockerfile`, `docker-compose.yml`, `conftest.py` | Django project config, packaging, deployment | `project/agent.md` |
 | `frontend-templates` | `frontend/templates/` | HTML templates: base, site, home, partials, accounts | — |
 
 ## Architecture
@@ -32,6 +32,9 @@ HTTP → project/urls.py → frontend.site.urls
 
 Startup: FrontendConfig.ready() → site.autodiscover_modules()
   → imports {app}/frontend.py → @register(Model) → site._registry[model]
+
+Optional URL bootstrap: FrontendConfig.ready()
+  → if FRONTEND_AUTO_URL: append path(FRONTEND_URL, include('frontend.urls')) to ROOT_URLCONF
 
 Accounts: project/urls.py → frontend.accounts.urls → urlpatterns_account
   → FrontendLoginView / FrontendSignUpView / FrontendPassword*View
@@ -50,9 +53,10 @@ Config: frontend/frontend.py auto-registers Frontend(Config) at import
 ## External Dependencies
 | Package | Purpose | Required |
 |---|---|---|
-| `django>=4.2` | Web framework, ORM, auth | Yes |
-| `django_bootstrap5>=24.3` | Bootstrap 5 template rendering | Yes |
-| `pytest`, `pytest-django`, `factory-boy` | Test stack | Dev only |
+| `django>=4.2` | Published package minimum | Yes |
+| `django>=5.2,<6.0` | Demo app and test harness dependency | Dev/demo |
+| `django_bootstrap5>=26.2` | Bootstrap 5 template rendering | Yes |
+| `pytest>=9.0`, `pytest-django>=4.12`, `pytest-factoryboy>=2.8.1`, `factory-boy>=3.3.3` | Test stack | Dev only |
 
 ## Configuration Reference
 | Setting | Default | Read In |
@@ -69,5 +73,5 @@ Config: frontend/frontend.py auto-registers Frontend(Config) at import
 
 ## Maintenance Notes
 - **Blitz-managed artifacts**: `/agent.md`, `frontend/agent.md`, `app/agent.md`, `app2/agent.md`, `project/agent.md`
-- Patch triggers: new/renamed files, changed public API, new/removed deps, architectural changes
+- Patch triggers: new/renamed files, changed public API, runtime floor/dependency changes, Docker workflow changes, architectural changes
 - Skip: whitespace-only edits, comment-only edits, `__pycache__`, migrations, `agent-output/`
