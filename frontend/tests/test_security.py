@@ -15,11 +15,14 @@ Tests cover the 4 Critical + 5 High findings from the security audit:
 
 import pytest
 from unittest.mock import MagicMock, patch, PropertyMock
+from django.contrib.admin.utils import display_for_field
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 
+from app.models import Author
 from frontend.forms import generate_form_for_model
+from frontend import action
 from frontend.sites.model import ModelFrontend
 
 
@@ -43,6 +46,38 @@ class TestFormFieldSafety(TestCase):
         from django.contrib.auth.models import User
         form_class = generate_form_for_model(User, fields=("username", "email"))
         self.assertEqual(form_class.Meta.fields, ("username", "email"))
+
+    def test_model_frontend_form_excludes_non_editable_fields(self):
+        """Configured non-editable model fields must not be passed into ModelForm generation."""
+
+        class AuthorFrontend(ModelFrontend):
+            fields = ("name", "created_at")
+
+        frontend = AuthorFrontend(model=Author)
+        form_class = frontend.get_form()
+
+        self.assertEqual(form_class.Meta.fields, ("name",))
+
+    def test_form_layout_includes_non_editable_fields_as_readonly_entries(self):
+        """Change-page layout should expose non-editable configured fields as readonly values."""
+
+        class AuthorFrontend(ModelFrontend):
+            fields = ("name", "created_at")
+
+        author = Author.objects.create(name="Ada", title="Dr")
+        frontend = AuthorFrontend(model=Author)
+        form = frontend.get_form()(initial=author.__dict__)
+
+        form_layout = frontend.get_form_layout(form=form, obj=author)
+
+        self.assertEqual([item["name"] for item in form_layout], ["name", "created_at"])
+        self.assertEqual(form_layout[0]["type"], "field")
+        self.assertEqual(form_layout[1]["type"], "readonly")
+        self.assertEqual(form_layout[1]["label"], "Created at")
+        self.assertEqual(
+            form_layout[1]["value"],
+            display_for_field(author.created_at, Author._meta.get_field("created_at"), "-"),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -178,6 +213,53 @@ class TestActionDispatchSafety(TestCase):
                 # The declared callable action SHOULD have been called with the object
                 action_spy.assert_called_once_with(mock_obj)
                 self.assertEqual(response.status_code, 302)
+
+
+class TestActionLabelMetadata(TestCase):
+    """Action labels should resolve from metadata first, then fallback safely."""
+
+    def test_action_label_uses_decorator_description(self):
+        class ExampleFrontend(ModelFrontend):
+            toolbar_button = ('publish',)
+
+            @action(description='Publish Now')
+            def publish(self):
+                return None
+
+        frontend = ExampleFrontend(model=User)
+
+        self.assertEqual(frontend.get_action_label('publish'), 'Publish Now')
+        self.assertEqual(
+            frontend.get_toolbar_actions(),
+            [{'name': 'publish', 'label': 'Publish Now'}],
+        )
+
+    def test_action_label_falls_back_to_titleized_name(self):
+        class ExampleFrontend(ModelFrontend):
+            inline_button = ('rebuild_search_index',)
+
+            def rebuild_search_index(self, obj):
+                return obj
+
+        frontend = ExampleFrontend(model=User)
+
+        self.assertEqual(frontend.get_action_label('rebuild_search_index'), 'Rebuild Search Index')
+        self.assertEqual(
+            frontend.get_inline_actions(),
+            [{'name': 'rebuild_search_index', 'label': 'Rebuild Search Index'}],
+        )
+
+    def test_action_label_formats_model_placeholders(self):
+        class ExampleFrontend(ModelFrontend):
+            toolbar_button = ('delete_selected',)
+
+            @action(description='Delete selected %(verbose_name_plural)s')
+            def delete_selected(self):
+                return None
+
+        frontend = ExampleFrontend(model=User)
+
+        self.assertEqual(frontend.get_action_label('delete_selected'), 'Delete selected users')
 
 
 # ---------------------------------------------------------------------------

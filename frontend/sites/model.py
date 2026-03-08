@@ -1,5 +1,7 @@
+from django.contrib.admin.utils import display_for_field
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.utils.text import capfirst
 from frontend.forms import generate_form_for_model
 from .abstract import FrontendAbstract
 from .mixin import NotImplementedMixin
@@ -53,6 +55,26 @@ class ModelFrontend(FrontendAbstract, NotImplementedMixin):
     def get_fields(self):
         return self.fields
 
+    def get_form_fields(self):
+        fields = self.get_fields()
+        if not fields:
+            return fields
+        return tuple(
+            field_name
+            for field_name in fields
+            if self.model._meta.get_field(field_name).editable
+        )
+
+    def get_non_editable_fields(self):
+        fields = self.get_fields()
+        if not fields:
+            return tuple()
+        return tuple(
+            field_name
+            for field_name in fields
+            if not self.model._meta.get_field(field_name).editable
+        )
+
     def get_search_fields(self):
         return self.search_fields
 
@@ -83,17 +105,85 @@ class ModelFrontend(FrontendAbstract, NotImplementedMixin):
     def get_toolbar_button(self):
         return self.toolbar_button
 
+    @staticmethod
+    def _default_action_label(name):
+        return name.replace('_', ' ').title()
+
+    def _format_action_description(self, description):
+        if not self.model:
+            return description
+
+        opts = self.model._meta
+        try:
+            return description % {
+                'verbose_name': opts.verbose_name,
+                'verbose_name_plural': opts.verbose_name_plural,
+            }
+        except (KeyError, TypeError, ValueError):
+            return description
+
+    def get_action_label(self, action_name):
+        handler = getattr(self, action_name, None)
+        description = getattr(handler, 'short_description', None)
+        if description is None and hasattr(handler, '__func__'):
+            description = getattr(handler.__func__, 'short_description', None)
+        if description:
+            return self._format_action_description(description)
+        return self._default_action_label(action_name)
+
+    def get_action_definition(self, action_name):
+        return {
+            'name': action_name,
+            'label': self.get_action_label(action_name),
+        }
+
+    def get_toolbar_actions(self):
+        return [self.get_action_definition(action_name) for action_name in self.get_toolbar_button()]
+
     def get_cards(self):
         return self.cards
+
     def get_inline_button(self):
         return self.inline_button
+
+    def get_inline_actions(self):
+        return [self.get_action_definition(action_name) for action_name in self.get_inline_button()]
+
+    def get_readonly_field_value(self, obj, field_name, empty_value_display='-'):
+        field = self.model._meta.get_field(field_name)
+        value = field.value_from_object(obj)
+        return display_for_field(value, field, empty_value_display)
+
+    def get_form_layout(self, form=None, obj=None):
+        form_layout = []
+        readonly_fields = set(self.get_non_editable_fields())
+
+        for field_name in self.get_fields():
+            if form is not None and field_name in form.fields:
+                form_layout.append({
+                    'type': 'field',
+                    'name': field_name,
+                    'bound_field': form[field_name],
+                })
+                continue
+
+            if obj is not None and field_name in readonly_fields:
+                model_field = self.model._meta.get_field(field_name)
+                form_layout.append({
+                    'type': 'readonly',
+                    'name': field_name,
+                    'label': capfirst(model_field.verbose_name),
+                    'value': self.get_readonly_field_value(obj, field_name),
+                })
+
+        return form_layout
 
     def get_form(self):
         """
         Redirects the user to the login page with the current path as the next URL.
         """
 
-        fields = self.get_fields()
+        fields = self.get_form_fields()
 
         return generate_form_for_model(self.model, fields)
 

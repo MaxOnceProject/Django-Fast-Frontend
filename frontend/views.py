@@ -117,6 +117,7 @@ class FrontendModelView(TemplateView):
         # create model forms
         form_class = model_config.get_form()
         form = form_class()
+        form_layout = model_config.get_form_layout(form=form)
 
         if action in ['table_add', 'table_change', 'table_delete']:
 
@@ -126,7 +127,9 @@ class FrontendModelView(TemplateView):
                 form = form_class(request.POST or None, initial=object.__dict__)
                 if model_config.get_readonly_fields():
                     for readonly_field in model_config.get_readonly_fields():
-                        form.fields[readonly_field].widget.attrs['readonly'] = True
+                        if readonly_field in form.fields:
+                            form.fields[readonly_field].widget.attrs['readonly'] = True
+                form_layout = model_config.get_form_layout(form=form, obj=object)
 
         list_display = model_config.get_list_display()
         # initiate data object
@@ -152,6 +155,8 @@ class FrontendModelView(TemplateView):
         objects = model_config.get_pagination(request, objects)
 
         inline_button = model_config.get_inline_button()
+        inline_actions = model_config.get_inline_actions()
+        toolbar_actions = model_config.get_toolbar_actions()
         table_fields += model_config.get_model_actions(inline_button)
 
         return site.http_model_response(
@@ -164,6 +169,7 @@ class FrontendModelView(TemplateView):
                     },
                     "table": {
                         "toolbar_button": model_config.get_toolbar_button(),
+                        "toolbar_actions": toolbar_actions,
                         "cards": model_config.get_cards(),
                         "show": model_config.has_view_permission(),
                         "add": model_config.has_add_permission(),
@@ -173,6 +179,7 @@ class FrontendModelView(TemplateView):
                         "filter": model_config.get_list_filter(),
                         "sort": model_config.get_sortable_by(),
                         "inline_button": model_config.get_inline_button(),
+                        "inline_actions": inline_actions,
                     },
                 },
                 "site": {
@@ -182,10 +189,13 @@ class FrontendModelView(TemplateView):
                 },
                 "table": {
                     "form": form or None,
+                    "form_layout": form_layout,
                     "objects": objects,
                     "fields": table_fields,
                     "inline_button": inline_button,
+                    "inline_actions": inline_actions,
                     "toolbar_button": model_config.get_toolbar_button(),
+                    "toolbar_actions": toolbar_actions,
                     "search_query": search_query,
                     "filter_fields": list_filter,
                     "list_filter_options": list_filter_options,

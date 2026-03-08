@@ -16,10 +16,12 @@ themes, toolbar/inline buttons, custom actions, and per-model `login_required` o
 | File | Role | Key Exports |
 |---|---|---|
 | `app/admin.py` | Django Admin mirror for the demo model | `AuthorAdmin` |
-| `app/models.py` | `Author` model (name, title, birth_date) (13 lines) | `Author` |
-| `app/frontend.py` | Full-featured `AuthorFrontend` — search, filter, sort, cards, toolbar/inline buttons, and `login_required = False` (31 lines) | `AuthorFrontend`, `AuthorFrontend.everything()`, `.everything_everything()`, `.check()`, `.uncheck()` |
+| `app/models.py` | `Author` model (name, title, birth_date, created_at) used to demo non-editable field rendering on change pages | `Author` |
+| `app/frontend.py` | Full-featured `AuthorFrontend` — search, filter, sort, cards, toolbar/inline buttons, add/change forms, readonly non-editable field display, and `login_required = False` | `AuthorFrontend`, `AuthorFrontend.everything()`, `.everything_everything()`, `.check()`, `.uncheck()` |
 | `app/apps.py` | AppConfig (7 lines); `verbose_name = 'Content'` drives sidebar group label | `AppConfig` |
-| `app/tests/test_frontend.py` | Integration tests: auth flow, CRUD, list/detail access (80 lines) | `test_user_anonymous()`, `test_user_is_authenticated()`, `test_global_authentication_off()` |
+| `app/management/commands/seed_demo_data.py` | Deterministic demo-data seed command for Docker end-to-end browser runs | `Command.handle()` |
+| `app/tests/test_frontend.py` | Integration tests: auth flow, CRUD, list/detail access, action labels, and readonly non-editable field rendering | `test_user_anonymous()`, `test_user_is_authenticated()`, `test_global_authentication_off()`, `test_change_page_renders_non_editable_fields_as_readonly_values()` |
+| `app/tests/test_browser_ui.py` | Docker-native Playwright smoke tests against a live seeded Django server with saved screenshots | `test_login_navigation_and_logout()`, `test_list_search_and_sort()`, `test_add_and_change_author()` |
 | `app/static/css/` | Custom theme CSS variants: blue, purple, rgb | Static assets |
 
 ## Registration Pattern (canonical example)
@@ -29,9 +31,12 @@ from app.models import Author
 
 @frontend.register(Author)
 class AuthorFrontend(frontend.ModelFrontend):
-    fields = ('name', 'title')
+    fields = ('name', 'title', 'created_at')
     login_required = False
     list_display = ('name', 'title')
+    readonly_fields = ('created_at',)
+    add_permission = True
+    change_permission = True
     search_fields = ('name', 'title', 'birth_date')
     list_filter = ('name', 'title')
     sortable_by = ('name', 'title')

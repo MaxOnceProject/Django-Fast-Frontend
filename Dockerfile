@@ -4,13 +4,15 @@ FROM python:3.12-slim
 # This is where the project source lives
 ARG PROJECT_ROOT=/opt/project
 ENV PYTHONPATH=${PROJECT_ROOT}
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 RUN mkdir -p ${PROJECT_ROOT} \
     && pip config set global.trusted-host "pypi.org files.pythonhosted.org pypi.python.org" \
     && pip install -U pip
 
 COPY requirements.txt /tmp/
-RUN pip install --no-cache-dir --prefer-binary -r /tmp/requirements.txt
+RUN pip install --no-cache-dir --prefer-binary -r /tmp/requirements.txt \
+    && python -m playwright install --with-deps chromium
 
 COPY . ${PROJECT_ROOT}
 WORKDIR ${PROJECT_ROOT}

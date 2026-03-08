@@ -4,7 +4,7 @@
 ## Project
 PyPI-installable Django library for admin-like CRUD frontend interfaces. Mirrors Django Admin API
 (`ModelAdmin` → `ModelFrontend`) but renders a Bootstrap 5 frontend instead of the admin panel.
-Version: 0.4.1 | Python 3.10+ package / Python 3.12 Docker image | Django 4.2+ library / 5.2+ demo harness | Tests: pytest + pytest-django + pytest-factoryboy
+Version: 0.4.1 | Python 3.10+ package / Python 3.12 Docker image | Django 4.2+ library / 5.2+ demo harness | Tests: pytest + pytest-django + pytest-factoryboy + local/Docker Playwright smoke tests
 
 ## Reading Order
 1. **This file** — scope map, boundaries, architecture
@@ -17,9 +17,9 @@ Version: 0.4.1 | Python 3.10+ package / Python 3.12 Docker image | Django 4.2+ l
 | Scope | Path | Description | agent.md |
 |---|---|---|---|
 | `frontend-core` | `frontend/` | Core library: registry, views, forms, accounts, templatetags | `frontend/agent.md` |
-| `demo-app` | `app/` | Full-featured demo app with integration tests | `app/agent.md` |
+| `demo-app` | `app/` | Full-featured demo app with integration tests, Docker browser smoke tests, and demo-data seeding | `app/agent.md` |
 | `demo-app-minimal` | `app2/` | Minimal pass-through demo app | `app2/agent.md` |
-| `project-config` | `project/`, `manage.py`, `setup.py`, `requirements.txt`, `Dockerfile`, `docker-compose.yml`, `conftest.py` | Django project config, packaging, deployment | `project/agent.md` |
+| `project-config` | `project/`, `manage.py`, `setup.py`, `requirements.txt`, `Dockerfile`, `docker-compose.yml`, `conftest.py`, `pytest.ini` | Django project config, packaging, deployment | `project/agent.md` |
 | `frontend-templates` | `frontend/templates/` | HTML templates: base, site, home, partials, accounts | — |
 
 ## Architecture
@@ -56,7 +56,7 @@ Config: frontend/frontend.py auto-registers Frontend(Config) at import
 | `django>=4.2` | Published package minimum | Yes |
 | `django>=5.2,<6.0` | Demo app and test harness dependency | Dev/demo |
 | `django_bootstrap5>=26.2` | Bootstrap 5 template rendering | Yes |
-| `pytest>=9.0`, `pytest-django>=4.12`, `pytest-factoryboy>=2.8.1`, `factory-boy>=3.3.3` | Test stack | Dev only |
+| `pytest>=9.0`, `pytest-django>=4.12`, `pytest-factoryboy>=2.8.1`, `factory-boy>=3.3.3`, `playwright>=1.52` | Test stack and Docker browser smoke coverage | Dev only |
 
 ## Configuration Reference
 | Setting | Default | Read In |

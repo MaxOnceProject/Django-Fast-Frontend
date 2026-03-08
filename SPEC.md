@@ -292,7 +292,9 @@ The demo project uses exactly this wiring pattern.
 - Applies auth checks.
 - Uses `model_config.get_queryset(request)` for object lookup.
 - Pre-populates a generated form with the target object's `__dict__` values.
-- Marks configured readonly fields with `readonly` widget attributes.
+- Marks configured readonly form fields with `readonly` widget attributes.
+- Renders configured non-editable model fields as read-only values in change-page field order.
+- Excludes non-editable model fields from the submitted `ModelForm`.
 
 ### 10.6 POST Add
 
@@ -329,6 +331,7 @@ The demo project uses exactly this wiring pattern.
 - The action name must be declared in `toolbar_button`.
 - The attribute on the frontend instance must be callable.
 - The callable is invoked with no arguments.
+- The rendered button label defaults to the action name transformed into title case, unless overridden via action metadata.
 - Redirects with `_safe_redirect()`.
 
 ### 10.10 POST Inline Action
@@ -339,6 +342,7 @@ The demo project uses exactly this wiring pattern.
 - The attribute must be callable.
 - The target object is resolved through `get_queryset(request)`.
 - The callable is invoked with the object instance as the sole argument.
+- The rendered button label defaults to the action name transformed into title case, unless overridden via action metadata.
 - Redirects with `_safe_redirect()`.
 
 ### 10.11 Unknown POST Action
@@ -406,6 +410,16 @@ Supported class attributes and defaults:
 - `change_permission = False`
 - `delete_permission = False`
 - `add_permission = False`
+
+### 12.1.1 Action Metadata
+
+Actions may expose a custom label for rendering.
+
+- Preferred API: `@frontend.action(description="...")`
+- Compatible metadata field: `short_description`
+- Supported placeholders in `description`: `%(verbose_name)s`, `%(verbose_name_plural)s`
+
+If no custom description is provided, the rendered label falls back to the action name with underscores replaced by spaces and title casing applied.
 
 ### 12.2 Key Methods
 

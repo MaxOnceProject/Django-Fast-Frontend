@@ -5,6 +5,7 @@
 # ----- Agent / CI generated docs -----
 agent-output/
 .github/agents/
+.github/prompts/
 
 # ----- Python bytecode & caches -----
 __pycache__/
@@ -24,6 +25,8 @@ wheels/
 .pytest_cache/
 .coverage
 htmlcov/
+.playwright-browsers/
+test-results/
 
 # ----- Django -----
 db.sqlite3

@@ -19,3 +19,20 @@ def register(models=None, site=None):
         return frontend_class
 
     return _frontend_register_wrapper
+
+
+def action(function=None, *, description=None):
+    """Attach metadata to a frontend action method.
+
+    Mirrors the Django admin action metadata pattern while keeping
+    django-fast-frontend's existing string-based action registration.
+    """
+
+    def decorator(func):
+        if description is not None:
+            func.short_description = description
+        return func
+
+    if function is None:
+        return decorator
+    return decorator(function)

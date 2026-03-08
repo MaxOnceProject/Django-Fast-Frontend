@@ -10,3 +10,4 @@ class Author(models.Model):
     name = models.CharField(max_length=100)
     title = models.CharField(max_length=3)
     birth_date = models.DateField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)

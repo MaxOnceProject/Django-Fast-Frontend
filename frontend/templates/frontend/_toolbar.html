@@ -7,12 +7,10 @@
     {% if option.table.add %}
         <a href="{% url 'frontend' app_name=segments.1 model_name=segments.2 action="table_add"%}">{% bootstrap_button button_class="btn btn-secondary" button_type="button" content="<i class='bi bi-plus-square'></i> Add" %}</a>
     {% endif %}
-    {% for toolbar_button in table.toolbar_button %}
-        <form method="post" class="needs-validation m-0" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=toolbar_button %}">
+    {% for toolbar_action in table.toolbar_actions %}
+        <form method="post" class="needs-validation m-0" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=toolbar_action.name %}">
             {% csrf_token %}
-            {% with toolbar_button|label as toolbar_button_label %}
-                {% bootstrap_button button_class="btn btn-primary" button_type="submit" content=toolbar_button_label %}
-            {% endwith %}
+            {% bootstrap_button button_class="btn btn-primary" button_type="submit" content=toolbar_action.label %}
         </form>
     {% endfor %}
 </div>

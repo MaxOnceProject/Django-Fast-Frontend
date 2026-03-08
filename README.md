@@ -61,6 +61,7 @@ It is not the right tool if you need full Django Admin parity, complex admin inl
 - Action dispatch limited to explicitly declared methods
 - Row-level authorization hook via `get_queryset(request)`
 - Forms never default to `fields = "__all__"`
+- Non-editable model fields in `fields` render read-only on change pages
 - Built-in account pages using Django auth views
 
 ## Requirements & Installation
@@ -264,6 +265,21 @@ class AuthorFrontend(frontend.ModelFrontend):
         print("rebuilding")
 ```
 
+To customize the button text, attach action metadata with `@frontend.action`.
+
+```python
+@frontend.register(Author)
+class AuthorFrontend(frontend.ModelFrontend):
+    fields = ("name", "title")
+    toolbar_button = ("rebuild_index",)
+
+    @frontend.action(description="Rebuild Search Index")
+    def rebuild_index(self):
+        print("rebuilding")
+```
+
+Without `description`, the package falls back to the Django-admin-like default label derived from the method name.
+
 #### Inline actions
 
 Inline actions are methods declared in `inline_button` and invoked with the object instance.
@@ -279,7 +295,36 @@ class AuthorFrontend(frontend.ModelFrontend):
         obj.save(update_fields=["is_published"])
 ```
 
+Inline actions support the same label metadata.
+
+```python
+@frontend.register(Author)
+class AuthorFrontend(frontend.ModelFrontend):
+    fields = ("name", "title")
+    inline_button = ("publish",)
+
+    @frontend.action(description="Publish Now")
+    def publish(self, obj):
+        obj.is_published = True
+        obj.save(update_fields=["is_published"])
+```
+
 Only actions explicitly listed in `toolbar_button` or `inline_button` are dispatched.
+
+#### Readonly and non-editable fields
+
+Use `readonly_fields` for editable model fields that should still render as form controls on the change page but remain non-editable in the browser.
+
+If a Django model field is itself non-editable, for example `auto_now_add=True` or `editable=False`, you can still include it in `fields`. django-fast-frontend will keep it out of the generated `ModelForm` and render its current value as read-only content on the change page.
+
+```python
+@frontend.register(Author)
+class AuthorFrontend(frontend.ModelFrontend):
+    fields = ("name", "title", "created_at")
+    readonly_fields = ("created_at",)
+```
+
+Non-editable model fields are not shown on the add page because there is no persisted value to display yet, and they are never submitted back through the generated form.
 
 #### Search, filter, sort, and pagination
 
@@ -609,11 +654,41 @@ Run tests locally:
 python -m pytest
 ```
 
+Install Playwright browsers for the local UI smoke suite:
+
+```bash
+python -m playwright install chromium
+```
+
+Run the local browser smoke suite:
+
+```bash
+python -m pytest -m ui app/tests/test_browser_ui.py -v
+```
+
+The Playwright suite covers a small smoke path for login, navigation, search, sort, and add/change interactions. For end-to-end validation in this repository, the Docker `ui-test` service is the primary workflow.
+
+Run the Docker end-to-end UI suite with a clean database, fresh migrations, seeded demo data, and persisted screenshots:
+
+```bash
+docker compose run --rm -T ui-test
+```
+
+The Docker UI service deletes `db.sqlite3`, runs `migrate`, seeds deterministic demo data, starts Django, runs the Playwright suite, and stores screenshots plus the Django server log under `test-results/` inside the project.
+
 Run tests with Docker:
 
 ```bash
 docker-compose run --rm app python -m pytest
 ```
+
+Run the Docker browser smoke suite:
+
+```bash
+docker compose run --rm -T app python -m pytest -m ui app/tests/test_browser_ui.py -v
+```
+
+The Docker image now bakes in Chromium and the required Playwright system dependencies at build time, so the UI suite does not need a separate browser install step inside the running container.
 
 Run migrations:
 

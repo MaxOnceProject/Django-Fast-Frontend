@@ -46,7 +46,10 @@ Django project config, packaging, deployment, and test setup. Dev/demo harness o
 docker-compose run --rm app python -m pytest                      # full suite via Docker (preferred)
 docker-compose run --rm app python -m pytest path/to/test.py -v  # single file via Docker
 docker-compose run --rm app python manage.py migrate             # migrations via Docker
+docker compose run --rm -T ui-test                               # Docker E2E Playwright suite with clean db, seed data, and screenshots
 python -m pytest                                                  # full suite (local env)
+python -m playwright install chromium                             # local UI smoke browser runtime
+python -m pytest -m ui app/tests/test_browser_ui.py -v            # local Playwright smoke suite
 python manage.py migrate                                          # apply migrations
 docker-compose up                                                 # dev server on port 8000 (also runs migrate on start)
 ```

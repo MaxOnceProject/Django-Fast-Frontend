@@ -121,7 +121,7 @@ USE_I18N = True
 USE_TZ = True
 
 # LOGIN_URL
-# LOGIN_REDIRECT_URL
+LOGIN_REDIRECT_URL = '/'
 
 
 # Static files (CSS, JavaScript, Images)
@@ -149,5 +149,4 @@ FRONTEND_CUSTOM_CSS = 'css/custom-purple.css'
 #     'django.contrib.auth.backends.ModelBackend',
 # )
 #
-# LOGIN_REDIRECT_URL = '/'
 # LOGOUT_REDIRECT_URL = '/'

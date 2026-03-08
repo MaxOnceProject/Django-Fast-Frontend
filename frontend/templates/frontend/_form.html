@@ -5,7 +5,20 @@
 
 <form method="post" class="needs-validation">
     {% csrf_token %}
-    {% bootstrap_form table.form %}
+    {% if table.form_layout %}
+        {% for item in table.form_layout %}
+            {% if item.type == 'readonly' %}
+                <div class="mb-3">
+                    <label class="form-label" for="readonly_{{ item.name }}">{{ item.label }}</label>
+                    <div id="readonly_{{ item.name }}" class="form-control-plaintext border rounded px-3 py-2">{{ item.value }}</div>
+                </div>
+            {% else %}
+                {% bootstrap_field item.bound_field %}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% bootstrap_form table.form %}
+    {% endif %}
     <div class="col d-flex justify-content">
         <div class="p-1">
             {% bootstrap_button button_type="submit" content="Save" %}

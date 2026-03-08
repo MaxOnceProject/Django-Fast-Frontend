@@ -19,13 +19,11 @@
                     {% endfor %}
                     <div class="d-flex flex-wrap gap-2 mt-auto">
                         {% if option.table.inline_button %}
-                            {% for inline_button in table.inline_button %}
+                            {% for inline_action in table.inline_actions %}
                                 <div>
-                                    <form method="post" class="needs-validation" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=inline_button id=object.id %}">
+                                    <form method="post" class="needs-validation" novalidate action="{% url 'frontend' app_name=segments.1 model_name=segments.2 action=inline_action.name id=object.id %}">
                                         {% csrf_token %}
-                                        {% with inline_button|label as inline_button_label %}
-                                            {% bootstrap_button button_type="submit" content=inline_button_label %}
-                                        {% endwith %}
+                                        {% bootstrap_button button_type="submit" content=inline_action.label %}
                                     </form>
                                 </div>
                             {% endfor %}

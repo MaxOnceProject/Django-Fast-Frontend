@@ -19,8 +19,8 @@ Mirrors Django Admin (`ModelAdmin` → `ModelFrontend`) but renders Bootstrap 5.
 | Language | Python 3.10+ |
 | Framework | Django 4.2+ library, Django 5.2+ demo harness |
 | UI | django_bootstrap5>=26.2 |
-| Tests | pytest>=9.0 + pytest-django>=4.12 + pytest-factoryboy>=2.8.1 |
-| Container | Docker + docker-compose (Python 3.12-slim image) |
+| Tests | pytest>=9.0 + pytest-django>=4.12 + pytest-factoryboy>=2.8.1 + Playwright local and Docker UI smoke tests |
+| Container | Docker + docker-compose (Python 3.12-slim image with Playwright Chromium baked in) |
 
 ## Scopes
 | Scope | Path | agent.md |
@@ -48,7 +48,10 @@ Mirrors Django Admin (`ModelAdmin` → `ModelFrontend`) but renders Bootstrap 5.
 | 3 | Dev server | `docker-compose up` | docker-compose.yml |
 | 4 | Run all tests | `docker-compose run --rm app python -m pytest` | conftest.py |
 | 4a | Run all tests (local) | `python -m pytest` | conftest.py |
+| 4b | Run UI smoke tests (local) | `python -m pytest -m ui app/tests/test_browser_ui.py -v` | pytest.ini |
+| 4c | Run UI smoke tests (Docker) | `docker compose run --rm -T ui-test` | docker-compose.yml |
 | 5 | Run single test | `docker-compose run --rm app python -m pytest path/to/test.py -v` | conftest.py |
+| 5a | Install Playwright browser (local) | `python -m playwright install chromium` | requirements.txt |
 | 6 | Migrate (Docker) | `docker-compose run --rm app python manage.py migrate` | docker-compose.yml |
 | 6a | Migrate (local) | `python manage.py migrate` | manage.py |
 | 7 | Build package | `python setup.py sdist bdist_wheel` | setup.py |

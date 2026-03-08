@@ -23,6 +23,7 @@ Core library (`frontend/`) distributed as `django-fast-frontend` on PyPI. Change
 
 ## Common Tasks
 - **New ModelFrontend attribute**: add to `sites/model.py` class body
+- **New action metadata**: keep action names in `toolbar_button` / `inline_button`; attach human-readable labels via `@frontend.action(description=...)`
 - **New URL**: add to `frontend/urls.py`
 - **New view**: add to `frontend/views.py`; add security test in `frontend/tests/test_security.py`
 - **Changed public export**: update `frontend/__init__.py`
